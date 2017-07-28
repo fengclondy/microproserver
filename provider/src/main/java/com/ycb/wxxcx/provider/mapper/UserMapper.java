@@ -1,19 +1,27 @@
 package com.ycb.wxxcx.provider.mapper;
 
 import com.ycb.wxxcx.provider.vo.User;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.*;
+
+import java.util.Date;
 
 /**
  * Created by zhuhui on 17-6-16.
  */
 @Mapper
 public interface UserMapper {
-    @Select("Select * from USER WHERE id = #{id}")
-    User findById(@Param("id") Long id);
+    @Select("Select optlock from ycb_mcs_user WHERE openid = #{openid}")
+    Integer findByOpenid(@Param("openid") String openid);
 
-    @Insert("Insert INTO USER VALUES(#{name},#{age})")
-    int insert(@Param("name") String name, @Param("age") Integer age);
+    @Insert("Insert INTO ycb_mcs_user(createdBy,createdDate,optlock,openid,platform,usablemoney,deposit,refund) " +
+            "VALUES(#{createdBy},#{createdDate},#{version},#{openid},#{platform},#{usablemoney},#{deposit},#{refund})")
+    void insert(User user);
+
+    @Select("Select * from ycb_mcs_user WHERE openid = #{openid}")
+    User findUserinfoByOpenid(@Param("openid") String openid);
+
+    @Update("Update ycb_mcs_user " +
+            "SET lastModifiedBy='system', lastModifiedDate=#{date}, optlock=#{version} " +
+            "WHERE openid=#{openid} ")
+    void update(@Param("version") Integer version, @Param("date") Date date, @Param("openid") String openid);
 }

@@ -1,34 +1,63 @@
 package com.ycb.wxxcx.provider.vo;
 
+import java.math.BigDecimal;
+
 /**
  * Created by zhuhui on 17-6-16.
  */
-public class User {
-    private Long id;
-    private String name;
-    private Integer age;
+public class User extends BaseEntity {
 
-    public Long getId() {
-        return id;
+    private String openid;
+
+    // 用户所属平台("0:微信-公众号 1:支付宝 2:芝麻信用 3:微信-小程序")
+    private Integer platform = 0;
+
+    // 账户余额
+    private BigDecimal usablemoney = BigDecimal.ZERO;
+
+    // 押金
+    private BigDecimal deposit = BigDecimal.ZERO;
+
+    // 待退款数目
+    private BigDecimal refund = BigDecimal.ZERO;
+
+    public String getOpenid() {
+        return openid;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setOpenid(String openid) {
+        this.openid = openid;
     }
 
-    public String getName() {
-        return name;
+    public Integer getPlatform() {
+        return platform;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setPlatform(Integer platform) {
+        this.platform = platform;
     }
 
-    public Integer getAge() {
-        return age;
+    public BigDecimal getUsablemoney() {
+        return usablemoney;
     }
 
-    public void setAge(Integer age) {
-        this.age = age;
+    public void setUsablemoney(BigDecimal usablemoney) {
+        this.usablemoney = usablemoney;
+    }
+
+    public BigDecimal getDeposit() {
+        return deposit;
+    }
+
+    public void setDeposit(BigDecimal deposit) {
+        this.deposit = deposit;
+    }
+
+    public BigDecimal getRefund() {
+        return refund;
+    }
+
+    public void setRefund(BigDecimal refund) {
+        this.refund = refund;
     }
 }
