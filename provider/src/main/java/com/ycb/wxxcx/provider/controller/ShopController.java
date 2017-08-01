@@ -2,7 +2,7 @@ package com.ycb.wxxcx.provider.controller;
 
 import com.ycb.wxxcx.provider.mapper.ShopMapper;
 import com.ycb.wxxcx.provider.utils.JsonUtils;
-import com.ycb.wxxcx.provider.vo.Shop;
+import com.ycb.wxxcx.provider.vo.ShopStation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +33,7 @@ public class ShopController {
                         @RequestParam("longitude") String longitude) {
         Map<String, Object> bacMap = new HashMap<>();
         try {
-            List<Shop> shopList =  this.shopMapper.findShops(latitude, longitude);
+            List<ShopStation> shopList =  this.shopMapper.findShops(latitude, longitude);
             Map<String, Object> data = new HashMap<>();
             data.put("shops", shopList);
             bacMap.put("data", data);

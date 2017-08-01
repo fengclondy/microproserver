@@ -1,9 +1,14 @@
 package com.ycb.wxxcx.provider.vo;
 
+import java.util.List;
+
 /**
  * Created by zhuhui on 17-7-28.
  */
 public class ShopStation {
+
+    // 商铺站点名
+    private String tile;
 
     // 地址
     private String address;
@@ -13,6 +18,17 @@ public class ShopStation {
 
     // 纬度
     private String latitude;
+
+    // 设备
+    private List<Station> stationList;
+
+    public String getTile() {
+        return tile;
+    }
+
+    public void setTile(String tile) {
+        this.tile = tile;
+    }
 
     public String getAddress() {
         return address;
@@ -36,5 +52,13 @@ public class ShopStation {
 
     public void setLatitude(String latitude) {
         this.latitude = latitude;
+    }
+
+    public List<Station> getStationList() {
+        return stationList;
+    }
+
+    public void setStationList(List<Station> stationList) {
+        this.stationList = stationList;
     }
 }
