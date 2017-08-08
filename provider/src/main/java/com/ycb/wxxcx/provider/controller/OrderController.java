@@ -1,15 +1,23 @@
 package com.ycb.wxxcx.provider.controller;
 
-import com.ycb.wxxcx.provider.vo.Order;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import com.ycb.wxxcx.provider.cache.RedisService;
+import com.ycb.wxxcx.provider.mapper.OrderMapper;
+import com.ycb.wxxcx.provider.mapper.UserMapper;
+import com.ycb.wxxcx.provider.utils.JsonUtils;
+import com.ycb.wxxcx.provider.vo.TradeLog;
+import com.ycb.wxxcx.provider.vo.User;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by zhuhui on 17-6-19.
@@ -17,10 +25,48 @@ import java.util.List;
 @RestController
 @RequestMapping("order")
 public class OrderController {
-    // 获取用户的订单记录 {user_id}
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
-    public List<Order> query(@PathVariable Long id) {
-        return null;
+
+    public static final Logger logger = LoggerFactory.getLogger(OrderController.class);
+
+    @Autowired
+    private RedisService redisService;
+
+    @Autowired(required = false)
+    private UserMapper userMapper;
+
+    @Autowired(required = false)
+    private OrderMapper orderMapper;
+
+    // 获取用户的订单记录
+    @RequestMapping(value = "/getOrderList", method = RequestMethod.POST)
+    @ResponseBody
+    public String query(@RequestParam("session") String session) {
+        Map<String, Object> bacMap = new HashMap<>();
+
+        if (StringUtils.isEmpty(session)){
+            bacMap.put("data", null);
+            bacMap.put("code", 2);
+            bacMap.put("msg", "失败(session不可为空)");
+            return JsonUtils.writeValueAsString(bacMap);
+        }
+
+        try {
+            String openid = redisService.getKeyValue(session);
+            User user = this.userMapper.findUserinfoByOpenid(openid);
+            List<TradeLog> tradeLogList =  this.orderMapper.findTradeLogs(user.getId());
+            Map<String, Object> data = new HashMap<>();
+            data.put("tradeLogs", tradeLogList);
+            bacMap.put("data", data);
+            bacMap.put("code", 0);
+            bacMap.put("msg", "成功");
+
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            bacMap.put("data", null);
+            bacMap.put("code", 1);
+            bacMap.put("msg", "获取数据失败");
+        }
+        return JsonUtils.writeValueAsString(bacMap);
     }
 
     // 用户扫码下单
