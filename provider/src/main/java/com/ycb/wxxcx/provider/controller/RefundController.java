@@ -1,10 +1,10 @@
 package com.ycb.wxxcx.provider.controller;
 
 import com.ycb.wxxcx.provider.cache.RedisService;
-import com.ycb.wxxcx.provider.mapper.OrderMapper;
+import com.ycb.wxxcx.provider.mapper.RefundMapper;
 import com.ycb.wxxcx.provider.mapper.UserMapper;
 import com.ycb.wxxcx.provider.utils.JsonUtils;
-import com.ycb.wxxcx.provider.vo.TradeLog;
+import com.ycb.wxxcx.provider.vo.Refund;
 import com.ycb.wxxcx.provider.vo.User;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -12,21 +12,22 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.net.Socket;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Created by zhuhui on 17-6-19.
+ * Created by 杜欣源:退款记录 on 2017/8/5.
  */
-@RestController
-@RequestMapping("order")
-public class OrderController {
 
-    public static final Logger logger = LoggerFactory.getLogger(OrderController.class);
+@RestController
+@RequestMapping("refund")
+public class RefundController {
+
+    public static final Logger logger = LoggerFactory.getLogger(RefundController.class);
+
+    @Autowired(required = false)
+    private RefundMapper refundMapper;
 
     @Autowired
     private RedisService redisService;
@@ -34,28 +35,25 @@ public class OrderController {
     @Autowired(required = false)
     private UserMapper userMapper;
 
-    @Autowired(required = false)
-    private OrderMapper orderMapper;
-
-    // 获取用户的订单记录
-    @RequestMapping(value = "/getOrderList", method = RequestMethod.POST)
+    // 获取提现记录列表
+    @RequestMapping(value = "/getRefundList", method = RequestMethod.POST)
     @ResponseBody
     public String query(@RequestParam("session") String session) {
         Map<String, Object> bacMap = new HashMap<>();
-
         if (StringUtils.isEmpty(session)){
             bacMap.put("data", null);
             bacMap.put("code", 2);
             bacMap.put("msg", "失败(session不可为空)");
+
             return JsonUtils.writeValueAsString(bacMap);
         }
-
         try {
             String openid = redisService.getKeyValue(session);
             User user = this.userMapper.findUserinfoByOpenid(openid);
-            List<TradeLog> tradeLogList =  this.orderMapper.findTradeLogs(user.getId());
+
+            List<Refund> refundList =  this.refundMapper.findRefunds(user.getId());
             Map<String, Object> data = new HashMap<>();
-            data.put("tradeLogs", tradeLogList);
+            data.put("refunds", refundList);
             bacMap.put("data", data);
             bacMap.put("code", 0);
             bacMap.put("msg", "成功");
@@ -69,22 +67,4 @@ public class OrderController {
         return JsonUtils.writeValueAsString(bacMap);
     }
 
-    // 用户扫码下单
-    @RequestMapping(value = "/borrowBattery", method = RequestMethod.GET)
-    public String borrowBattery() throws IOException {
-        Socket socket = null;
-        try {
-            socket = new Socket("127.0.0.1", 8000);
-            //向服务器端发送数据
-            OutputStreamWriter out = new OutputStreamWriter(socket.getOutputStream());
-            out.write("ACT:rent_confirm;STATUS:1;ORDERID:xxxx;ID:xxxx;STATIONID:xxxx;COLORID:xxxx;POWER:xxx;ISDAMAGE:xxxx;VOLTAGE:xxxx;ADAPTER:xxxx;CABLE:xxxx;SLOT:xxxx;TEMPERATURE:xxxx;BATT_TYPE:xxxx\r\n");
-            out.flush();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            socket.close();
-        }
-        return null;
-    }
-    // 用户充电宝报失 根据用户id 更新订单状态
 }
