@@ -1,19 +1,27 @@
 package com.ycb.wxxcx.provider.utils;
 
+import org.jdom.Element;
+import org.jdom.JDOMException;
+import org.jdom.input.SAXBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 /**
  * Created by zhuhui on 17-6-19.
  */
 public class WXPayUtil {
+
+    public static final Logger logger = LoggerFactory.getLogger(WXPayUtil.class);
+
     //生成随机字符串
     public static String getNonce_str() {
         String base = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -27,7 +35,7 @@ public class WXPayUtil {
     }
 
     //map转xml 加上签名信息
-    public static String map2Xml(Map<String, Object> map) throws UnsupportedEncodingException {
+    public static String map2Xml(Map<String, Object> map, String keyValue) throws UnsupportedEncodingException {
         StringBuffer sb = new StringBuffer();
         StringBuilder sb2 = new StringBuilder();
         sb2.append("<xml>");
@@ -38,11 +46,11 @@ public class WXPayUtil {
             sb.append('&');
             // sb2是用来做请求的xml参数
             sb2.append("<" + key + ">");
-            // sb2.append("<![CDATA[" + map.get(key) + "]]>");
-            sb2.append(map.get(key));
+            sb2.append("<![CDATA[" + map.get(key) + "]]>");
+            // sb2.append(map.get(key));
             sb2.append("</" + key + ">");
         }
-        sb.append(System.getenv("signKey"));
+        sb.append("key=").append(keyValue);
         String sign = MD5.getMessageDigest(sb.toString().getBytes()).toUpperCase();
         sb2.append("<sign>");
         sb2.append(sign);
@@ -53,7 +61,7 @@ public class WXPayUtil {
 
     //解析微信返回return_code SUCCESS或FILE
     //根据微信返回resultXml再次生成签名
-    public static String getSign(Map<String, Object> map) {
+    public static String getSign(Map<String, Object> map, String keyValue) {
         StringBuffer sb = new StringBuffer();
         for (String key : map.keySet()) {
             sb.append(key);
@@ -61,7 +69,7 @@ public class WXPayUtil {
             sb.append(map.get(key));
             sb.append('&');
         }
-        sb.append(System.getenv("signKey"));
+        sb.append("key=").append(keyValue);
         System.out.println("第二次签名内容:" + sb);
         System.out.println("第二次签名SING:" + MD5.getMessageDigest(sb.toString().getBytes()).toUpperCase());
         return MD5.getMessageDigest(sb.toString().getBytes()).toUpperCase();
@@ -177,7 +185,13 @@ public class WXPayUtil {
         }
     }
 
-    //解析微信返回prepay_id
+    /**
+     * @param resultXml 微信返回结果
+     * @return
+     * @author zhuhui
+     * @date
+     * @Description：解析微信返回prepay_id
+     */
     public static String getPrepayId(String resultXml) {
         String nonceStr;
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -198,4 +212,117 @@ public class WXPayUtil {
             return null;
         }
     }
+
+    /**
+     * @param return_code 返回编码
+     * @param return_msg  返回信息
+     * @return
+     * @author zhuhui
+     * @date
+     * @Description：返回给微信的参数
+     */
+    public static String setXML(String return_code, String return_msg) {
+        return "<xml><return_code><![CDATA[" + return_code
+                + "]]></return_code><return_msg><![CDATA[" + return_msg
+                + "]]></return_msg></xml>";
+    }
+
+    /**
+     * 检验API返回的数据里面的签名是否合法，避免数据在传输的过程中被第三方篡改
+     *
+     * @param responseStr API返回的XML数据字符串
+     * @param key         商户Key
+     * @return API签名是否合法
+     */
+    public static boolean checkIsSignValidFromResponseString(String responseStr, String key) {
+        try {
+            Map<String, Object> map = doXMLParse(responseStr);
+            String signFromAPIResponse = map.get("sign").toString();
+            if ("".equals(signFromAPIResponse) || signFromAPIResponse == null) {
+                logger.debug("API返回的数据签名数据不存在，有可能被第三方篡改!!!");
+                return false;
+            }
+            logger.debug("服务器回包里面的签名是:" + signFromAPIResponse);
+            //清掉返回数据对象里面的Sign数据（不能把这个数据也加进去进行签名），然后用签名算法进行签名
+            map.remove("sign");
+            //将API返回的数据根据用签名算法进行计算新的签名，用来跟API返回的签名进行比较
+            String signForAPIResponse = getSign(map, key);
+            if (!signForAPIResponse.equals(signFromAPIResponse)) {
+                //签名验不过，表示这个API返回的数据有可能已经被篡改了
+                logger.debug("API返回的数据签名验证不通过，有可能被第三方篡改!!!");
+                return false;
+            }
+            logger.debug("恭喜，API返回的数据签名验证通过!!!");
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * 解析xml,返回第一级元素键值对。
+     * 如果第一级元素有子节点，
+     * 则此节点的值是子节点的xml数据。
+     *
+     * @param strxml
+     * @return
+     * @throws JDOMException
+     * @throws IOException
+     */
+    public static SortedMap<String, Object> doXMLParse(String strxml)
+            throws JDOMException, IOException {
+        strxml = strxml.replaceFirst("encoding=\".*\"", "encoding=\"UTF-8\"");
+        if (null == strxml || "".equals(strxml)) {
+            return null;
+        }
+        SortedMap<String, Object> map = new TreeMap<String, Object>();
+        InputStream in = new ByteArrayInputStream(strxml.getBytes("UTF-8"));
+        SAXBuilder builder = new SAXBuilder();
+        org.jdom.Document doc = builder.build(in);
+        Element root = doc.getRootElement();
+        List list = root.getChildren();
+        Iterator it = list.iterator();
+        while (it.hasNext()) {
+            Element e = (Element) it.next();
+            String key = e.getName();
+            String value = "";
+            List children = e.getChildren();
+            if (children.isEmpty()) {
+                value = e.getTextNormalize();
+            } else {
+                value = getChildrenText(children);
+            }
+            map.put(key, value);
+        }
+        // 关闭流
+        in.close();
+        return map;
+    }
+
+    /**
+     * 获取子结点的xml
+     *
+     * @param children
+     * @return
+     */
+    public static String getChildrenText(List children) {
+        StringBuffer sb = new StringBuffer();
+        if (!children.isEmpty()) {
+            Iterator it = children.iterator();
+            while (it.hasNext()) {
+                Element e = (Element) it.next();
+                String name = e.getName();
+                String value = e.getTextNormalize();
+                List list = e.getChildren();
+                sb.append("<" + name + ">");
+                if (!list.isEmpty()) {
+                    sb.append(getChildrenText(list));
+                }
+                sb.append(value);
+                sb.append("</" + name + ">");
+            }
+        }
+        return sb.toString();
+    }
+
 }
