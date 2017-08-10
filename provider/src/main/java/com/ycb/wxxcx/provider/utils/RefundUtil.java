@@ -1,21 +1,14 @@
 package com.ycb.wxxcx.provider.utils;
 
-
-import com.ycb.wxxcx.provider.constant.GlobalConfig;
 import com.ycb.wxxcx.provider.utils.http.HttpClientConnectionManager;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.params.ClientPNames;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLContexts;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.jdom.Document;
-import org.jdom.Element;
-import org.jdom.input.SAXBuilder;
 
 import javax.net.ssl.SSLContext;
 import java.io.ByteArrayInputStream;
@@ -25,29 +18,27 @@ import java.io.InputStream;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 
-public class GetWxOrderno {
-    public static DefaultHttpClient httpclient;
+public class RefundUtil {
+    public static CloseableHttpClient httpclient;
 
     static {
-        httpclient = new DefaultHttpClient();
-        httpclient = (DefaultHttpClient) HttpClientConnectionManager.getSSLInstance(httpclient);
+        httpclient = HttpClients.createDefault();
+        //httpclient = HttpClientConnectionManager.getSSLInstance(httpclient);
     }
 
-    public static Map<String, String> getPreOrder(String url,String xmlParam){
-        DefaultHttpClient client = new DefaultHttpClient();
-        client.getParams().setParameter(ClientPNames.ALLOW_CIRCULAR_REDIRECTS, true);
+    public static Map<String, Object> getPreOrder(String url, String xmlParam) {
+        //DefaultHttpClient client = new DefaultHttpClient();
+        //httpclient.getParams().setParameter(ClientPNames.ALLOW_CIRCULAR_REDIRECTS, true);
         HttpPost httpost = HttpClientConnectionManager.getPostMethod(url);
         try {
             httpost.setEntity(new StringEntity(xmlParam, "UTF-8"));
             HttpResponse response = httpclient.execute(httpost);
             String jsonStr = EntityUtils.toString(response.getEntity(), "UTF-8");
             System.out.println(jsonStr);
-            Map<String, String> map = doXMLParse(jsonStr);
+            Map<String, Object> map = XmlUtil.doXMLParse(jsonStr);
             return map;
         } catch (Exception e) {
             // TODO Auto-generated catch block
@@ -56,10 +47,10 @@ public class GetWxOrderno {
         return null;
     }
 
-    public static Map<String, Object> forRefund(String url, String xmlParam) throws KeyStoreException, IOException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyManagementException {
+    public static Map<String, Object> forRefund(String url, String xmlParam, String mch_id) throws KeyStoreException, IOException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyManagementException {
         Map doXMLtoMap = new HashMap();
         KeyStore keyStore = KeyStore.getInstance("PKCS12");
-        String P12_PASSWORD = GlobalConfig.MCH_ID;
+        String P12_PASSWORD = mch_id;
         FileInputStream inputStream = new FileInputStream("D:\\wxpaykey\\apiclient_cert.p12");
         try {
             keyStore.load(inputStream, P12_PASSWORD.toCharArray());
@@ -69,25 +60,24 @@ public class GetWxOrderno {
             e.printStackTrace();
         } catch (CertificateException e) {
             e.printStackTrace();
-        }finally {
+        } finally {
             inputStream.close();
         }
         SSLContext sslcontext = SSLContexts.custom().loadKeyMaterial(keyStore, P12_PASSWORD.toCharArray()).build();
         SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslcontext,
                 new String[]{"TLSv1"}, null, SSLConnectionSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
         CloseableHttpClient httpclient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
-        DefaultHttpClient client = new DefaultHttpClient();
-        client.getParams().setParameter(ClientPNames.ALLOW_CIRCULAR_REDIRECTS, true);
+        //DefaultHttpClient client = new DefaultHttpClient();
+        //client.getParams().setParameter(ClientPNames.ALLOW_CIRCULAR_REDIRECTS, true);
         HttpPost httpost = HttpClientConnectionManager.getPostMethod(url);
-
         try {
             httpost.setEntity(new StringEntity(xmlParam, "UTF-8"));
             HttpResponse response = httpclient.execute(httpost);
             String jsonStr = EntityUtils.toString(response.getEntity(), "UTF-8");
-            if(jsonStr.indexOf("FAIL") >= 0){
+            if (jsonStr.indexOf("FAIL") >= 0) {
                 return null;
             }
-            doXMLtoMap = doXMLParse(jsonStr);
+            doXMLtoMap = XmlUtil.doXMLParse(jsonStr);
             return doXMLtoMap;
         } catch (Exception e) {
             e.printStackTrace();
@@ -97,76 +87,11 @@ public class GetWxOrderno {
         return null;
     }
 
-    /**
-     * 解析xml,返回第一级元素键值对。如果第一级元素有子节点，则此节点的值是子节点的xml数据。
-     *
-     * @param strxml
-     * @return
-     */
-    public static Map<String, String> doXMLParse(String strxml) throws Exception {
-        if (null == strxml || "".equals(strxml)) {
-            return null;
-        }
-
-        Map m = new HashMap();
-        InputStream in = String2Inputstream(strxml);
-        SAXBuilder builder = new SAXBuilder();
-        Document doc = builder.build(in);
-        Element root = doc.getRootElement();
-        List list = root.getChildren();
-        Iterator it = list.iterator();
-        while (it.hasNext()) {
-            Element e = (Element) it.next();
-            String k = e.getName();
-            String v = "";
-            List children = e.getChildren();
-            if (children.isEmpty()) {
-                v = e.getTextNormalize();
-            } else {
-                v = getChildrenText(children);
-            }
-
-            m.put(k, v);
-        }
-
-        //关闭流
-        in.close();
-
-        return m;
-    }
-
-    /**
-     * 获取子结点的xml
-     *
-     * @param children
-     * @return String
-     */
-    public static String getChildrenText(List children) {
-        StringBuffer sb = new StringBuffer();
-        if (!children.isEmpty()) {
-            Iterator it = children.iterator();
-            while (it.hasNext()) {
-                Element e = (Element) it.next();
-                String name = e.getName();
-                String value = e.getTextNormalize();
-                List list = e.getChildren();
-                sb.append("<" + name + ">");
-                if (!list.isEmpty()) {
-                    sb.append(getChildrenText(list));
-                }
-                sb.append(value);
-                sb.append("</" + name + ">");
-            }
-        }
-
-        return sb.toString();
-    }
-
     public static InputStream String2Inputstream(String str) {
         return new ByteArrayInputStream(str.getBytes());
     }
 
-    public Map<String, String> getOrderquery(String url, String xml) {
+    /*public Map<String, String> getOrderquery(String url, String xml) {
         DefaultHttpClient client = new DefaultHttpClient();
         client.getParams().setParameter(ClientPNames.ALLOW_CIRCULAR_REDIRECTS, true);
         HttpPost httpost = HttpClientConnectionManager.getPostMethod(url);
@@ -182,5 +107,5 @@ public class GetWxOrderno {
             e.printStackTrace();
         }
         return null;
-    }
+    }*/
 }
