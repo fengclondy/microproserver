@@ -25,4 +25,10 @@ public interface UserMapper {
             "SET lastModifiedBy='system', lastModifiedDate=#{date}, optlock=#{version} " +
             "WHERE openid=#{openid} ")
     void update(@Param("version") Integer version, @Param("date") Date date, @Param("openid") String openid);
+
+    @Select("Select id,usablemoney from ycb_mcs_user WHERE openid = #{openid}")
+    User findUserMoneyByOpenid(String openid);
+
+    @Update("Update ycb_mcs_user SET lastModifiedBy=#{lastModifiedBy},lastModifiedDate=NOW(),deposit=0,usablemoney=0 WHERE id=#{id}")
+    void updateUsablemoneyByUid(User user);
 }

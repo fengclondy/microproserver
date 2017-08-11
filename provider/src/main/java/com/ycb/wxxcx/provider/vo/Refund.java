@@ -7,10 +7,10 @@ import java.util.Date;
 /**
  * Created by 杜欣源 on 2017/8/5.
  */
-public class Refund {
+public class Refund extends BaseEntity{
 
-    //提现编号
-    private Long id;
+    //用户编号
+    private Long uid;
 
     //提现金额
     private BigDecimal refund;
@@ -24,12 +24,12 @@ public class Refund {
     //提现时间
     private Date refundTime;
 
-    public Long getId() {
-        return id;
+    public Long getUid() {
+        return uid;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setUid(Long uid) {
+        this.uid = uid;
     }
 
     public BigDecimal getRefund() {

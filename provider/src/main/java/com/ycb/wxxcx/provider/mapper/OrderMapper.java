@@ -31,4 +31,7 @@ public interface OrderMapper {
             @Result(property = "usefee", column = "usefee")
     })
     List<TradeLog> findTradeLogs(Long customer);
+
+    @Select("SELECT orderid FROM ycb_mcs_tradelog WHERE id = (SELECT MAX(id) FROM ycb_mcs_tradelog WHERE customer = #{customer})")
+    TradeLog findOrderIdByUid(Long customer);
 }
