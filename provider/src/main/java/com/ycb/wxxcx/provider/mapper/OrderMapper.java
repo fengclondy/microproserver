@@ -1,10 +1,8 @@
 package com.ycb.wxxcx.provider.mapper;
 
+import com.ycb.wxxcx.provider.vo.Order;
 import com.ycb.wxxcx.provider.vo.TradeLog;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Result;
-import org.apache.ibatis.annotations.Results;
-import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 
@@ -34,4 +32,15 @@ public interface OrderMapper {
 
     @Select("SELECT orderid FROM ycb_mcs_tradelog WHERE id = (SELECT MAX(id) FROM ycb_mcs_tradelog WHERE customer = #{customer})")
     TradeLog findOrderIdByUid(Long customer);
+
+    @Insert("INSERT INTO ycb_mcs_tradelog(createdBy,createdDate,optlock," +
+            "borrow_city,borrow_station_name,borrow_time,orderid,paid," +
+            "platform,price,status,usefee,customer,borrow_shop_id,borrow_shop_station_id," +
+            "borrow_station_id) VALUES(#{createdBy},#{createdDate},0,#{borrow_city}," +
+            "#{borrow_station_name},#{borrow_time},#{orderid},#{paid},#{platform},#{price},#{status}," +
+            "#{usefee},#{customer},#{borrow_shop_id},#{borrow_shop_station_id},#{borrow_station_id})")
+    void saveOrder(Order order);
+
+    @Update("UPDATE ycb_mcs_tradelog SET lastModifiedBy=#{lastModifiedBy},lastModifiedDate=#{lastModifiedDate},status=#{status} WHERE orderid=#{orderid}")
+    void updateOrderStatus(Order order);
 }

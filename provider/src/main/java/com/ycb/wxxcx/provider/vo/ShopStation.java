@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * Created by zhuhui on 17-7-28.
  */
-public class ShopStation {
+public class ShopStation extends BaseEntity{
 
     // 商铺站点名
     private String tile;

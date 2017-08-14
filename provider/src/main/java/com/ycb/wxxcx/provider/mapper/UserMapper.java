@@ -35,4 +35,7 @@ public interface UserMapper {
 
     @Update("Update ycb_mcs_user SET lastModifiedBy=#{lastModifiedBy},lastModifiedDate=NOW(),deposit=0,usablemoney=0 WHERE id=#{id}")
     void updateUsablemoneyByUid(User user);
+
+    @Select("Select id from ycb_mcs_user WHERE openid = #{openid}")
+    User findUserIdByOpenid(String openid);
 }
