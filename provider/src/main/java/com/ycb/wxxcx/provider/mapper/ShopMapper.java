@@ -1,5 +1,6 @@
 package com.ycb.wxxcx.provider.mapper;
 
+import com.ycb.wxxcx.provider.vo.Shop;
 import com.ycb.wxxcx.provider.vo.ShopStation;
 import com.ycb.wxxcx.provider.vo.Station;
 import org.apache.ibatis.annotations.*;
@@ -45,4 +46,8 @@ public interface ShopMapper {
             @Result(property = "longitude", column = "longitude")
     })
     List<ShopStation> findShopStations();
+
+    @Select("SELECT s.id,s.city FROM ycb_mcs_shop_station ss," +
+            "ycb_mcs_shop s WHERE ss.shopid=s.id AND ss.station_id=#{sid}")
+    Shop getShopInfoBySid(String sid);
 }

@@ -1,5 +1,6 @@
 package com.ycb.wxxcx.provider.mapper;
 
+import com.ycb.wxxcx.provider.vo.Station;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -13,4 +14,6 @@ public interface StationMapper {
             "Where s.id = #{sid} ")
     String getUsableBatteries(@Param("sid") Long sid);
 
+    @Select("SELECT s.id,s.title FROM ycb_mcs_station s WHERE s.id=#{sid}")
+    Station getStationBySid(String sid);
 }

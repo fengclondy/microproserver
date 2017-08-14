@@ -1,6 +1,7 @@
 package com.ycb.wxxcx.provider.mapper;
 
 import com.ycb.wxxcx.provider.vo.User;
+import com.ycb.wxxcx.provider.vo.UserInfo;
 import org.apache.ibatis.annotations.*;
 
 import java.util.Date;
@@ -18,7 +19,10 @@ public interface UserMapper {
             "VALUES(#{createdBy},#{createdDate},#{version},#{openid},#{platform},#{usablemoney},#{deposit},#{refund},0)")
     void insert(User user);
 
-    @Select("Select * from ycb_mcs_user WHERE openid = #{openid}")
+    @Select("SELECT u.id,ui.nickname,u.usablemoney,ui.headimgurl,u.deposit,u.refund FROM ycb_mcs_user u,ycb_mcs_userinfo ui WHERE u.openid=ui.openid AND u.openid = #{openid}")
+    UserInfo findUserinfo(@Param("openid") String openid);
+
+    @Select("SELECT * FROM ycb_mcs_user WHERE openid = #{openid}")
     User findUserinfoByOpenid(@Param("openid") String openid);
 
     @Update("Update ycb_mcs_user " +
@@ -31,4 +35,7 @@ public interface UserMapper {
 
     @Update("Update ycb_mcs_user SET lastModifiedBy=#{lastModifiedBy},lastModifiedDate=NOW(),deposit=0,usablemoney=0 WHERE id=#{id}")
     void updateUsablemoneyByUid(User user);
+
+    @Select("Select id from ycb_mcs_user WHERE openid = #{openid}")
+    User findUserIdByOpenid(String openid);
 }

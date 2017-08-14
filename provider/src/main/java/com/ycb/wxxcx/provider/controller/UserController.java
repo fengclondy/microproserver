@@ -6,6 +6,7 @@ import com.ycb.wxxcx.provider.utils.HttpRequest;
 import com.ycb.wxxcx.provider.utils.JsonUtils;
 import com.ycb.wxxcx.provider.utils.MD5;
 import com.ycb.wxxcx.provider.vo.User;
+import com.ycb.wxxcx.provider.vo.UserInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,9 +24,10 @@ import java.util.Map;
 @RestController
 @RequestMapping("user")
 public class UserController {
+
     public static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
-    @Autowired
+    @Autowired(required = false)
     private UserMapper userMapper;
 
     @Autowired
@@ -86,23 +88,28 @@ public class UserController {
         return JsonUtils.writeValueAsString(bacMap);
     }
 
-
-    // 获取用户基本信息 用户头像，用户昵称，用户账户余额
+    // 获取用户基本信息 用户头像，用户昵称，用户账户余额 (用户中心)
     @RequestMapping(value = "/userInfo", method = RequestMethod.POST)
     public String query(@RequestParam("session") String session) {
         Map<String, Object> bacMap = new HashMap<>();
         try {
             String openid = redisService.getKeyValue(session);
-            User user = this.userMapper.findUserinfoByOpenid(openid);
-            Map<String, Object> data = new HashMap<>();
-            data.put("user_info", user);
-            bacMap.put("data", data);
-            bacMap.put("code", 0);
-            bacMap.put("msg", "成功");
+            UserInfo userInfo = this.userMapper.findUserinfo(openid);
+            if (null != userInfo){
+                Map<String, Object> data = new HashMap<>();
+                bacMap.put("code", 0);
+                bacMap.put("msg", "成功");
+                data.put("user_info", userInfo);
+                bacMap.put("data", data);
+            }else {
+                bacMap.put("data", null);
+                bacMap.put("code", 2);
+                bacMap.put("msg", "session有误");
+            }
         } catch (Exception e) {
             bacMap.put("data", null);
-            bacMap.put("code", 0);
-            bacMap.put("msg", "失败");
+            bacMap.put("code", 1);
+            bacMap.put("msg", "获取用户信息失败");
         }
         return JsonUtils.writeValueAsString(bacMap);
     }
@@ -114,6 +121,4 @@ public class UserController {
         return HttpRequest.sendGet("https://api.weixin.qq.com/sns/jscode2session", param);
     }
 
-    // 提现接口 WithdrawMoney
-    // 提现记录 WithdrawHistory
 }
