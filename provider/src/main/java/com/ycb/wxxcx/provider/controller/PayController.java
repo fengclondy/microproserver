@@ -3,6 +3,7 @@ package com.ycb.wxxcx.provider.controller;
 import com.google.common.base.Charsets;
 import com.ycb.wxxcx.provider.cache.RedisService;
 import com.ycb.wxxcx.provider.mapper.*;
+import com.ycb.wxxcx.provider.service.SocketService;
 import com.ycb.wxxcx.provider.utils.HttpRequest;
 import com.ycb.wxxcx.provider.utils.JsonUtils;
 import com.ycb.wxxcx.provider.utils.WXPayUtil;
@@ -34,6 +35,9 @@ import java.util.Map;
 public class PayController {
 
     public static final Logger logger = LoggerFactory.getLogger(PayController.class);
+
+    @Autowired
+    private SocketService socketService;
 
     @Autowired
     private RedisService redisService;
@@ -74,7 +78,6 @@ public class PayController {
                           @RequestParam("sid") String sid,//设备id
                           @RequestParam("cable_type") String cableType,  //线类型
                           @RequestParam("tid") String tid) {  //标签id
-
         String openid = redisService.getKeyValue(session);
         User user = userMapper.findUserIdByOpenid(openid);
         Station station = stationMapper.getStationBySid(sid);
@@ -93,7 +96,7 @@ public class PayController {
         String yyyyMMdd = DateFormatUtils.format(new Date(), "yyyyMMdd");
         String hhmmss = DateFormatUtils.format(new Date(), "hhmmss");
         int randomNum = RandomUtils.nextInt(99999);
-        String out_trade_no = "MCS-" + yyyyMMdd + "-" + hhmmss + "-" + randomNum;
+        String out_trade_no = "MCS-" + yyyyMMdd + "-" + hhmmss + "-" + String.format("%05d", randomNum);
         paramMap.put("out_trade_no", out_trade_no);
         String remoteAddr = "";
         if (request != null) {
@@ -178,11 +181,8 @@ public class PayController {
                 String transactionId = (String) map.get("transaction_id");
                 String totlaFee = (String) map.get("total_fee");
                 Integer totalPrice = Integer.valueOf(totlaFee);
-                // if (PayApp.theApp.isDebug()) {// 测试时候支付一分钱，买入价值6块的20分钟语音
-                //    totalPrice = 6;
-                // }
-                // boolean isOk = updateDB(outTradeNo, transactionId, totalPrice, 2);
 
+                socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;MAC:XXXX;ORDERID:XXX;COLORID:7;CABLE:XXX;\r\n");
                 //修改订单状态
                 Order order = new Order();
                 order.setLastModifiedBy("system");
