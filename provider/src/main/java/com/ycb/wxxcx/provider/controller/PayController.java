@@ -140,9 +140,9 @@ public class PayController {
             order.setBorrow_station_name(station.getTitle());
             order.setBorrow_time(order.getCreatedDate());
             order.setOrderid(out_trade_no);//订单编号
-            order.setPaid(BigDecimal.valueOf(1));//押金  先写死了!
             order.setPlatform(0);//平台
             order.setPrice(BigDecimal.valueOf(100));//商品价格
+            order.setPaid(BigDecimal.valueOf(0));//已支付的费用
             order.setStatus(0);//未支付状态
             order.setUsefee(BigDecimal.ZERO);//产生的费用
             order.setCustomer(user.getId());//用户id
@@ -188,6 +188,7 @@ public class PayController {
                 order.setLastModifiedBy("system");
                 order.setLastModifiedDate(new Date());
                 order.setStatus(1);//订单状态改为1，已支付
+                order.setPaid(BigDecimal.valueOf(totalPrice)); //已支付的费用
                 order.setOrderid(outTradeNo);
                 orderMapper.updateOrderStatus(order);
 
