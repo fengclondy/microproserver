@@ -41,6 +41,8 @@ public interface OrderMapper {
             "#{usefee},#{customer},#{borrow_shop_id},#{borrow_shop_station_id},#{borrow_station_id})")
     void saveOrder(Order order);
 
-    @Update("UPDATE ycb_mcs_tradelog SET lastModifiedBy=#{lastModifiedBy},lastModifiedDate=#{lastModifiedDate},status=#{status} WHERE orderid=#{orderid}")
+    @Update("UPDATE ycb_mcs_tradelog SET lastModifiedBy=#{lastModifiedBy}," +
+            "lastModifiedDate=#{lastModifiedDate},status=#{status},paid=#{paid}" +
+            " WHERE orderid=#{orderid}")
     void updateOrderStatus(Order order);
 }
