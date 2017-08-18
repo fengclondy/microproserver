@@ -1,5 +1,6 @@
 package com.ycb.wxxcx.provider.utils;
 
+import com.ycb.wxxcx.provider.constant.GlobalConfig;
 import com.ycb.wxxcx.provider.utils.http.HttpClientConnectionManager;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -12,7 +13,6 @@ import org.apache.http.util.EntityUtils;
 
 import javax.net.ssl.SSLContext;
 import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.*;
@@ -22,6 +22,7 @@ import java.util.Map;
 
 
 public class RefundUtil {
+
     public static CloseableHttpClient httpclient;
 
     static {
@@ -51,7 +52,8 @@ public class RefundUtil {
         Map doXMLtoMap = new HashMap();
         KeyStore keyStore = KeyStore.getInstance("PKCS12");
         String P12_PASSWORD = mch_id;
-        FileInputStream inputStream = new FileInputStream("D:\\wxpaykey\\apiclient_cert.p12");
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        InputStream inputStream = classLoader.getResourceAsStream(GlobalConfig.APICLIENT_CERT_P12);
         try {
             keyStore.load(inputStream, P12_PASSWORD.toCharArray());
         } catch (IOException e) {
