@@ -1,5 +1,7 @@
 package com.ycb.wxxcx.provider.utils;
 
+import org.apache.commons.lang.math.RandomUtils;
+import org.apache.commons.lang.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.NodeList;
@@ -9,6 +11,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.Date;
 import java.util.Map;
 import java.util.Random;
 
@@ -256,4 +259,15 @@ public class WXPayUtil {
         }
     }
 
+    /**
+     * 订单号生成
+     *
+     * @return
+     */
+    public static String createOrderId() {
+        String yyyyMMdd = DateFormatUtils.format(new Date(), "yyyyMMdd");
+        String hhmmss = DateFormatUtils.format(new Date(), "HHmmss");
+        int randomNum = RandomUtils.nextInt(99999);
+        return "MCS-" + yyyyMMdd + "-" + hhmmss + "-" + String.format("%05d", randomNum);
+    }
 }

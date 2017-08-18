@@ -11,8 +11,6 @@ import com.ycb.wxxcx.provider.utils.WXPayUtil;
 import com.ycb.wxxcx.provider.utils.XmlUtil;
 import com.ycb.wxxcx.provider.vo.*;
 import org.apache.catalina.servlet4preview.http.HttpServletRequest;
-import org.apache.commons.lang.math.RandomUtils;
-import org.apache.commons.lang.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,12 +77,106 @@ public class PayController {
                           @RequestParam("sid") String sid,//设备id
                           @RequestParam("cable_type") String cableType,  //线类型
                           @RequestParam("tid") String tid) {  //标签id
-        String openid = redisService.getKeyValue(session);
-        User user = userMapper.findUserIdByOpenid(openid);
+        Map<String, Object> bacMap = new HashMap<>();
+        try {
+            String openid = redisService.getKeyValue(session);
+            User user = userMapper.findUserIdByOpenid(openid);
+            if (user.getUsablemoney().compareTo(BigDecimal.valueOf(95)) > 0) {
+                // 账户内月额大于95 时，直接使用余额支付
+
+                //创建订单
+                String orderid = WXPayUtil.createOrderId();
+                createPreOrder(sid, cableType, user, orderid);
+                //弹出电池
+                String mac = stationMapper.getStationMac(Long.valueOf(sid));
+                socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;MAC:" + mac + ";ORDERID:" + orderid + ";COLORID:7;CABLE:" + cableType + ";\r\n");
+                //修改用户账户信息，余额，押金修正
+                BigDecimal useMoney = user.getUsablemoney();
+                if (useMoney.compareTo(BigDecimal.valueOf(100)) > 0) {
+                    useMoney = BigDecimal.valueOf(100);
+                }
+                userMapper.updateUserDepositUsable(useMoney,user.getId());
+                Map<String, Object> data = new HashMap<>();
+                data.put("paytype", 1);//1账户余额支付
+                bacMap.put("data", data);
+                bacMap.put("code", 0);
+                bacMap.put("errcode", 0);
+                bacMap.put("msg", "成功");
+            } else {
+                // 统一下单，生成预支付交易单
+                Map<String, Object> paramMap = createPrepayParam(openid);
+                String preOrderInfo = HttpRequest.sendPost(GlobalConfig.WX_UNIFIEDORDER_URL, WXPayUtil.map2Xml(paramMap, key));
+                //创建订单
+                createPreOrder(sid, cableType, user, paramMap.get("out_trade_no").toString());
+
+                Map<String, Object> prePayMap = new LinkedHashMap<>();
+                prePayMap.put("appId", WXPayUtil.getAppId(preOrderInfo));
+                prePayMap.put("nonceStr", WXPayUtil.getNonceStr(preOrderInfo));
+                prePayMap.put("package", "prepay_id=" + WXPayUtil.getPrepayId(preOrderInfo));
+                prePayMap.put("signType", "MD5");
+                prePayMap.put("timeStamp", String.valueOf(System.currentTimeMillis()));
+                String paySign = WXPayUtil.getSign(prePayMap, key);
+                Map<String, Object> payData = new HashMap<>();
+                payData.put("timeStamp", prePayMap.get("timeStamp"));
+                payData.put("nonceStr", prePayMap.get("nonceStr"));
+                payData.put("package", prePayMap.get("package"));
+                payData.put("signType", prePayMap.get("signType"));
+                payData.put("paySign", paySign);
+                Map<String, Object> data = new HashMap<>();
+                data.put("paytype", 0);//微信支付
+                data.put("wxpay_params", payData);//微信支付
+                bacMap.put("data", data);
+                bacMap.put("code", 0);
+                bacMap.put("errcode", 0);
+                bacMap.put("msg", "成功");
+            }
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            bacMap.put("data", null);
+            bacMap.put("code", 0);
+            bacMap.put("msg", "失败");
+        }
+        return JsonUtils.writeValueAsString(bacMap);
+    }
+
+    /**
+     * 创建订单
+     *
+     * @param sid
+     * @param cableType
+     * @param user
+     * @param orderid
+     */
+    private void createPreOrder(@RequestParam("sid") String sid, @RequestParam("cable_type") String cableType, User user, String orderid) {
         Station station = stationMapper.getStationBySid(sid);
         Shop shop = shopMapper.getShopInfoBySid(sid);
         ShopStation shopStation = shopStationMapper.findShopStationIdBySid(sid);
-        // 统一下单，生成预支付交易单
+        Order order = new Order();
+        order.setCreatedBy("SYS:prepay");
+        order.setCreatedDate(new Date());
+        order.setBorrow_station_name(station.getTitle());
+        order.setBorrow_time(order.getCreatedDate());
+        order.setOrderid(orderid);//订单编号
+        order.setPlatform(3);//平台(小程序)
+        order.setPrice(BigDecimal.valueOf(100));//商品价格(元)
+        order.setPaid(BigDecimal.ZERO);//已支付的费用
+        order.setUsefee(BigDecimal.ZERO);//产生的费用
+        order.setCable(Integer.valueOf(cableType));
+        order.setStatus(0);//未支付状态
+        order.setCustomer(user.getId());//用户id
+        order.setBorrow_shop_id(shop.getId());
+        order.setBorrow_shop_station_id(shopStation.getId());
+        order.setBorrow_station_id(station.getId());
+        orderMapper.saveOrder(order);
+    }
+
+    /**
+     * 微信支付参数
+     *
+     * @param openid
+     * @return
+     */
+    private Map<String, Object> createPrepayParam(String openid) {
         Map<String, Object> paramMap = new LinkedHashMap<>();
         paramMap.put("appid", appID);
         paramMap.put("attach", "attach");
@@ -94,10 +186,7 @@ public class PayController {
         paramMap.put("nonce_str", WXPayUtil.getNonce_str());
         paramMap.put("notify_url", GlobalConfig.NOTIFY_URL);
         paramMap.put("openid", openid);
-        String yyyyMMdd = DateFormatUtils.format(new Date(), "yyyyMMdd");
-        String hhmmss = DateFormatUtils.format(new Date(), "HHmmss");
-        int randomNum = RandomUtils.nextInt(99999);
-        String out_trade_no = "MCS-" + yyyyMMdd + "-" + hhmmss + "-" + String.format("%05d", randomNum);
+        String out_trade_no = WXPayUtil.createOrderId();
         paramMap.put("out_trade_no", out_trade_no);
         String remoteAddr = "";
         if (request != null) {
@@ -109,58 +198,11 @@ public class PayController {
         paramMap.put("spbill_create_ip", remoteAddr);
         // paramMap.put("time_expire", "20170808160434");
         // paramMap.put("time_start", "20170808155434");
-        paramMap.put("total_fee", 1);//费用
+        paramMap.put("total_fee", 1);//费用 TODO
         paramMap.put("trade_type", "JSAPI");
-
-        Map<String, Object> bacMap = new HashMap<>();
-        try {
-            String preOrderInfo = HttpRequest.sendPost("", WXPayUtil.map2Xml(paramMap, key));
-            Map<String, Object> prePayMap = new LinkedHashMap<>();
-            prePayMap.put("appId", WXPayUtil.getAppId(preOrderInfo));
-            prePayMap.put("nonceStr", WXPayUtil.getNonceStr(preOrderInfo));
-            prePayMap.put("package", "prepay_id=" + WXPayUtil.getPrepayId(preOrderInfo));
-            prePayMap.put("signType", "MD5");
-            prePayMap.put("timeStamp", String.valueOf(System.currentTimeMillis()));
-            String paySign = WXPayUtil.getSign(prePayMap, key);
-            Map<String, Object> data = new HashMap<>();
-            data.put("timeStamp", prePayMap.get("timeStamp"));
-            data.put("nonceStr", prePayMap.get("nonceStr"));
-            data.put("package", prePayMap.get("package"));
-            data.put("signType", prePayMap.get("signType"));
-            data.put("paySign", paySign);
-            bacMap.put("wxpay_params", data);
-            bacMap.put("code", 0);
-            bacMap.put("errcode", 0);
-            bacMap.put("msg", "成功");
-
-            //创建订单
-            Order order = new Order();
-            order.setCreatedBy("system");
-            order.setCreatedDate(new Date());
-            order.setBorrow_city(shop.getCity());
-            order.setBorrow_station_name(station.getTitle());
-            order.setBorrow_time(order.getCreatedDate());
-            order.setOrderid(out_trade_no);//订单编号
-            order.setPlatform(3);//平台(小程序)
-            order.setPrice(BigDecimal.valueOf(100));//商品价格
-            order.setPaid(BigDecimal.ZERO);//已支付的费用
-            order.setStatus(0);//未支付状态
-            order.setUsefee(BigDecimal.ZERO);//产生的费用
-            order.setCustomer(user.getId());//用户id
-            order.setBorrow_shop_id(shop.getId());
-            order.setBorrow_shop_station_id(shopStation.getId());
-            order.setBorrow_station_id(station.getId());
-
-            orderMapper.saveOrder(order);
-
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            bacMap.put("data", null);
-            bacMap.put("code", 0);
-            bacMap.put("msg", "失败");
-        }
-        return JsonUtils.writeValueAsString(bacMap);
+        return paramMap;
     }
+
 
     @RequestMapping(value = "/payNotify", method = {RequestMethod.GET, RequestMethod.POST})
     public String payNotify(HttpServletRequest request) {
@@ -179,22 +221,23 @@ public class PayController {
             if ("SUCCESS".equalsIgnoreCase(map.get("result_code").toString())) {
                 //获取应用服务器需要的数据进行持久化操作
                 String outTradeNo = (String) map.get("out_trade_no");
-                String transactionId = (String) map.get("transaction_id");
                 String totlaFee = (String) map.get("total_fee");
-                Integer totalPrice = Integer.valueOf(totlaFee);
+                Long paid = Long.valueOf(totlaFee);
 
                 //根据订单查询MAC和CABLE
                 Station station = stationMapper.getMacCableByOrderid(outTradeNo);
-
-                socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;MAC:"+station.getMac()+";ORDERID:"+outTradeNo+";COLORID:7;CABLE:"+station.getCable()+";\r\n");
-                //修改订单状态
+                socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;MAC:" + station.getMac() + ";ORDERID:" + outTradeNo + ";COLORID:7;CABLE:" + station.getCable() + ";\r\n");
+                //修改订单状态为1，已支付
                 Order order = new Order();
-                order.setLastModifiedBy("system");
+                order.setLastModifiedBy("SYS:pay");
                 order.setLastModifiedDate(new Date());
                 order.setStatus(1);//订单状态改为1，已支付
-                order.setPaid(BigDecimal.valueOf(totalPrice)); //已支付的费用
+                order.setPaid(BigDecimal.valueOf(paid).divide(BigDecimal.valueOf(100), 2)); //已支付的费用 分转换元
                 order.setOrderid(outTradeNo);
                 orderMapper.updateOrderStatus(order);
+
+                //更新用户账户信息，押金
+                userMapper.updateUserDeposit(BigDecimal.valueOf(paid).divide(BigDecimal.valueOf(100), 2), order.getCustomer());
 
                 boolean isOk = true;
                 // 告诉微信服务器，我收到信息了，不要在调用回调action了
