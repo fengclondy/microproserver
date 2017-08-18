@@ -72,7 +72,7 @@ public class RefundController {
 
             List<Refund> refundList = this.refundMapper.findRefunds(user.getId());
             Map<String, Object> data = new HashMap<>();
-            data.put("refunds", refundList);
+            data.put("redund_logs", refundList);
             bacMap.put("data", data);
             bacMap.put("code", 0);
             bacMap.put("msg", "成功");
@@ -172,14 +172,12 @@ public class RefundController {
                     return JsonUtils.writeValueAsString(bacMap);
                 }
             } else {
-                String return_msg = (String) map.get("return_msg");
                 bacMap.put("code", 4);
-                bacMap.put("msg", "签名失败，参数格式校验错误:"+return_msg);
+                bacMap.put("msg", "签名失败，参数格式校验错误");
                 return JsonUtils.writeValueAsString(bacMap);
             }
         } catch (Exception e) {
             e.printStackTrace();
-
             bacMap.put("code", 3);
             bacMap.put("msg", "退款失败（系统有异常）");
             return JsonUtils.writeValueAsString(bacMap);

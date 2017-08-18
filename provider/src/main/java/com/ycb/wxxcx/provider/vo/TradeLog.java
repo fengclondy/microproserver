@@ -17,7 +17,7 @@ public class TradeLog {
     // 租借地点
     private String borrowName;
     // 租借时间
-    private Date orderTime;
+    private Date borrowTime;
     // 收费策略
     private String feeStr;
     // 归还地点
@@ -53,12 +53,12 @@ public class TradeLog {
         this.borrowName = borrowName;
     }
 
-    public Date getOrderTime() {
-        return orderTime;
+    public Date getBorrowTime() {
+        return borrowTime;
     }
 
-    public void setOrderTime(Date orderTime) {
-        this.orderTime = orderTime;
+    public void setBorrowTime(Date borrowTime) {
+        this.borrowTime = borrowTime;
     }
 
     public String getFeeStr() {
@@ -96,8 +96,9 @@ public class TradeLog {
     public Long getLastTime() {
         //借出时间和归还时间的时间差 单位：毫秒
         SimpleDateFormat dfs = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Long lastTime = this.getReturnTime().getTime()-this.getOrderTime().getTime();
-        //Long lastTime = between/1000/60/60;
+        if (null != this.getReturnTime()) {
+            lastTime = this.getReturnTime().getTime() - this.getBorrowTime().getTime();
+        }
         return lastTime;
     }
 
@@ -111,7 +112,7 @@ public class TradeLog {
                 "orderid='" + orderid + '\'' +
                 ", status=" + status +
                 ", borrowName='" + borrowName + '\'' +
-                ", orderTime=" + orderTime +
+                ", borrowTime=" + borrowTime +
                 ", feeStr='" + feeStr + '\'' +
                 ", returnName='" + returnName + '\'' +
                 ", returnTime=" + returnTime +

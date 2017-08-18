@@ -21,11 +21,10 @@ public interface OrderMapper {
             @Result(property = "orderid", column = "orderid"),
             @Result(property = "status", column = "status"),
             @Result(property = "borrowName", column = "borrow_station_name"),
-            @Result(property = "orderTime", column = "borrow_time"),
+            @Result(property = "borrowTime", column = "borrow_time"),
             @Result(property = "feeStr", column = "1"), //目前没用，随便定义的
             @Result(property = "returnName", column = "return_station_name"),
             @Result(property = "returnTime", column = "return_time"),
-            @Result(property = "lastTime", column = "last_time"),
             @Result(property = "usefee", column = "usefee")
     })
     List<TradeLog> findTradeLogs(Long customer);
