@@ -14,4 +14,5 @@ public class GlobalConfig {
 
     public static final String WX_OPENID_URL = "https://api.weixin.qq.com/sns/jscode2session";
 
+    public static final String APICLIENT_CERT_P12 = "apiclient_cert.p12";
 }
