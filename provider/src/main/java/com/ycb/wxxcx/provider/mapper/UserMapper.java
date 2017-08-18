@@ -4,6 +4,7 @@ import com.ycb.wxxcx.provider.vo.User;
 import com.ycb.wxxcx.provider.vo.UserInfo;
 import org.apache.ibatis.annotations.*;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 /**
@@ -35,6 +36,13 @@ public interface UserMapper {
     @Update("Update ycb_mcs_user SET lastModifiedBy=#{lastModifiedBy},lastModifiedDate=NOW(),deposit=0,usablemoney=0 WHERE id=#{id}")
     void updateUsablemoneyByUid(User user);
 
-    @Select("Select id from ycb_mcs_user WHERE openid = #{openid}")
+    @Select("Select id, usablemoney from ycb_mcs_user WHERE openid = #{openid}")
     User findUserIdByOpenid(String openid);
+
+    @Update("Update ycb_mcs_user SET lastModifiedBy='SYS:pay',lastModifiedDate=NOW(),optlock =optlock+1,deposit=deposit+#{paid},usablemoney=0 WHERE id=#{customerid}")
+    void updateUserDeposit(BigDecimal paid, @Param("customerid") Long customerid);
+
+
+    @Update("Update ycb_mcs_user SET lastModifiedBy='SYS:pay',lastModifiedDate=NOW(),deposit=deposit+#{deposit},usablemoney=usablemoney-#{usablemoney} WHERE id=#{id}")
+    void updateUserDepositUsable(BigDecimal useMoney, Long id);
 }

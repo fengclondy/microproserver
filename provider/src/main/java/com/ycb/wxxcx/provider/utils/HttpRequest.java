@@ -1,7 +1,5 @@
 package com.ycb.wxxcx.provider.utils;
 
-import org.springframework.util.StringUtils;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -78,9 +76,6 @@ public class HttpRequest {
         PrintWriter out = null;
         BufferedReader in = null;
         String result = "";
-        if (StringUtils.isEmpty(url)) {
-            url = "https://api.mch.weixin.qq.com/pay/unifiedorder";
-        }
         try {
             URL realUrl = new URL(url);
             // 打开和URL之间的连接

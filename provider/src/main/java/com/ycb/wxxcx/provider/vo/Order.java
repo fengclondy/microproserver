@@ -17,22 +17,24 @@ public class Order extends BaseEntity{
     private String borrow_station_name;
     //租借时间
     private Date borrow_time;
-    //付清的
-    private BigDecimal paid = BigDecimal.ZERO;
     //平台
     private Integer platform;
-    //价格
+    //已付款
+    private BigDecimal paid = BigDecimal.ZERO;
+    //使用费用
+    private BigDecimal usefee = BigDecimal.ZERO;
+    //订单价格
     private BigDecimal price = BigDecimal.ZERO;
-    //已退还
+    //已退款
     private BigDecimal refunded = BigDecimal.ZERO;
+    //租借电池线类型
+    private Integer cable;
     //退还城市
     private String return_city;
     //退还站点名称
     private String return_station_name;
     //退还时间
     private Date return_time;
-    //使用费用
-    private BigDecimal usefee = BigDecimal.ZERO;
     // 用户id
     private Long customer;
     //借出商铺id
@@ -111,6 +113,15 @@ public class Order extends BaseEntity{
 
     public void setPaid(BigDecimal paid) {
         this.paid = paid;
+    }
+
+
+    public Integer getCable() {
+        return cable;
+    }
+
+    public void setCable(Integer cable) {
+        this.cable = cable;
     }
 
     public Integer getPlatform() {

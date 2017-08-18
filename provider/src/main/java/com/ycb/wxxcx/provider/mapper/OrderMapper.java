@@ -35,9 +35,9 @@ public interface OrderMapper {
     @Insert("INSERT INTO ycb_mcs_tradelog(createdBy,createdDate,optlock," +
             "borrow_city,borrow_station_name,borrow_time,orderid,paid," +
             "platform,price,status,usefee,customer,borrow_shop_id,borrow_shop_station_id," +
-            "borrow_station_id) VALUES(#{createdBy},#{createdDate},0,#{borrow_city}," +
+            "borrow_station_id,cable) VALUES(#{createdBy},#{createdDate},0,#{borrow_city}," +
             "#{borrow_station_name},#{borrow_time},#{orderid},#{paid},#{platform},#{price},#{status}," +
-            "#{usefee},#{customer},#{borrow_shop_id},#{borrow_shop_station_id},#{borrow_station_id})")
+            "#{usefee},#{customer},#{borrow_shop_id},#{borrow_shop_station_id},#{borrow_station_id},#{cable})")
     void saveOrder(Order order);
 
     @Update("UPDATE ycb_mcs_tradelog SET lastModifiedBy=#{lastModifiedBy}," +
