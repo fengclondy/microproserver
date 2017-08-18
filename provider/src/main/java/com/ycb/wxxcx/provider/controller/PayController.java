@@ -95,7 +95,7 @@ public class PayController {
                 if (useMoney.compareTo(BigDecimal.valueOf(100)) > 0) {
                     useMoney = BigDecimal.valueOf(100);
                 }
-                userMapper.updateUserDepositUsable(useMoney,user.getId());
+                userMapper.updateUserDepositUsable(useMoney, user.getId());
                 Map<String, Object> data = new HashMap<>();
                 data.put("paytype", 1);//1账户余额支付
                 bacMap.put("data", data);
@@ -104,7 +104,7 @@ public class PayController {
                 bacMap.put("msg", "成功");
             } else {
                 // 统一下单，生成预支付交易单
-                Map<String, Object> paramMap = createPrepayParam(openid);
+                Map<String, Object> paramMap = createPrepayParam(openid, user.getUsablemoney().longValue());
                 String preOrderInfo = HttpRequest.sendPost(GlobalConfig.WX_UNIFIEDORDER_URL, WXPayUtil.map2Xml(paramMap, key));
                 //创建订单
                 createPreOrder(sid, cableType, user, paramMap.get("out_trade_no").toString());
@@ -174,9 +174,10 @@ public class PayController {
      * 微信支付参数
      *
      * @param openid
+     * @param usablemoney
      * @return
      */
-    private Map<String, Object> createPrepayParam(String openid) {
+    private Map<String, Object> createPrepayParam(String openid, long usablemoney) {
         Map<String, Object> paramMap = new LinkedHashMap<>();
         paramMap.put("appid", appID);
         paramMap.put("attach", "attach");
@@ -198,7 +199,7 @@ public class PayController {
         paramMap.put("spbill_create_ip", remoteAddr);
         // paramMap.put("time_expire", "20170808160434");
         // paramMap.put("time_start", "20170808155434");
-        paramMap.put("total_fee", 1);//费用 TODO
+        paramMap.put("total_fee", 10000 - usablemoney);//费用 TODO
         paramMap.put("trade_type", "JSAPI");
         return paramMap;
     }
