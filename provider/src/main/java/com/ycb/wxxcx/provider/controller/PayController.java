@@ -2,6 +2,7 @@ package com.ycb.wxxcx.provider.controller;
 
 import com.google.common.base.Charsets;
 import com.ycb.wxxcx.provider.cache.RedisService;
+import com.ycb.wxxcx.provider.constant.GlobalConfig;
 import com.ycb.wxxcx.provider.mapper.*;
 import com.ycb.wxxcx.provider.service.SocketService;
 import com.ycb.wxxcx.provider.utils.HttpRequest;
@@ -91,10 +92,10 @@ public class PayController {
         paramMap.put("goods_tag", "notag");
         paramMap.put("mch_id", mchId);
         paramMap.put("nonce_str", WXPayUtil.getNonce_str());
-        paramMap.put("notify_url", "https://m.pzzhuhui.top/wxpay/payNotify");
+        paramMap.put("notify_url", GlobalConfig.NOTIFY_URL);
         paramMap.put("openid", openid);
         String yyyyMMdd = DateFormatUtils.format(new Date(), "yyyyMMdd");
-        String hhmmss = DateFormatUtils.format(new Date(), "hhmmss");
+        String hhmmss = DateFormatUtils.format(new Date(), "HHmmss");
         int randomNum = RandomUtils.nextInt(99999);
         String out_trade_no = "MCS-" + yyyyMMdd + "-" + hhmmss + "-" + String.format("%05d", randomNum);
         paramMap.put("out_trade_no", out_trade_no);
@@ -140,9 +141,9 @@ public class PayController {
             order.setBorrow_station_name(station.getTitle());
             order.setBorrow_time(order.getCreatedDate());
             order.setOrderid(out_trade_no);//订单编号
-            order.setPlatform(0);//平台
+            order.setPlatform(3);//平台(小程序)
             order.setPrice(BigDecimal.valueOf(100));//商品价格
-            order.setPaid(BigDecimal.valueOf(0));//已支付的费用
+            order.setPaid(BigDecimal.ZERO);//已支付的费用
             order.setStatus(0);//未支付状态
             order.setUsefee(BigDecimal.ZERO);//产生的费用
             order.setCustomer(user.getId());//用户id
@@ -182,7 +183,10 @@ public class PayController {
                 String totlaFee = (String) map.get("total_fee");
                 Integer totalPrice = Integer.valueOf(totlaFee);
 
-                socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;MAC:XXXX;ORDERID:XXX;COLORID:7;CABLE:XXX;\r\n");
+                //根据订单查询MAC和CABLE
+                Station station = stationMapper.getMacCableByOrderid(outTradeNo);
+
+                socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;MAC:"+station.getMac()+";ORDERID:"+outTradeNo+";COLORID:7;CABLE:"+station.getCable()+";\r\n");
                 //修改订单状态
                 Order order = new Order();
                 order.setLastModifiedBy("system");

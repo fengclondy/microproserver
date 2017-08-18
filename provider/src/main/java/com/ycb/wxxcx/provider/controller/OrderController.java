@@ -54,11 +54,17 @@ public class OrderController {
             String openid = redisService.getKeyValue(session);
             User user = this.userMapper.findUserinfoByOpenid(openid);
             List<TradeLog> tradeLogList =  this.orderMapper.findTradeLogs(user.getId());
-            Map<String, Object> data = new HashMap<>();
-            data.put("tradeLogs", tradeLogList);
-            bacMap.put("data", data);
-            bacMap.put("code", 0);
-            bacMap.put("msg", "成功");
+            if (null != tradeLogList){
+                Map<String, List> data = new HashMap<String, List>();
+                data.put("orders", tradeLogList);
+                bacMap.put("data", data);
+                bacMap.put("code", 0);
+                bacMap.put("msg", "成功");
+            }else {
+                bacMap.put("data", null);
+                bacMap.put("code", 1);
+                bacMap.put("msg", "用户暂无租借记录");
+            }
 
         } catch (Exception e) {
             logger.error(e.getMessage());

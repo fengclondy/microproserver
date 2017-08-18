@@ -12,6 +12,10 @@ public class Station {
 
     private Integer empty;
 
+    private String mac;
+
+    private Integer cable;
+
     public Long getId() {
         return id;
     }
@@ -42,5 +46,21 @@ public class Station {
 
     public void setEmpty(Integer empty) {
         this.empty = empty;
+    }
+
+    public String getMac() {
+        return mac;
+    }
+
+    public void setMac(String mac) {
+        this.mac = mac;
+    }
+
+    public Integer getCable() {
+        return cable;
+    }
+
+    public void setCable(Integer cable) {
+        this.cable = cable;
     }
 }
