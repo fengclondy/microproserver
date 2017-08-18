@@ -1,6 +1,7 @@
 package com.ycb.wxxcx.provider.controller;
 
 import com.ycb.wxxcx.provider.cache.RedisService;
+import com.ycb.wxxcx.provider.constant.GlobalConfig;
 import com.ycb.wxxcx.provider.mapper.UserMapper;
 import com.ycb.wxxcx.provider.utils.HttpRequest;
 import com.ycb.wxxcx.provider.utils.JsonUtils;
@@ -48,7 +49,7 @@ public class UserController {
         String param = "appid=" + appID + "&secret=" + appSecret + "&js_code=" + code + "&grant_type=authorization_code";
         Map<String, Object> bacMap = new HashMap<>();
         try {
-            String getLoginInfo = HttpRequest.sendGet("https://api.weixin.qq.com/sns/jscode2session", param);
+            String getLoginInfo = HttpRequest.sendGet(GlobalConfig.WX_OPENID_URL, param);
             Map<String, Object> loginInfoMap = JsonUtils.readValue(getLoginInfo);
             String sessinKey = (String) loginInfoMap.get("session_key");
             String openid = (String) loginInfoMap.get("openid");
@@ -112,13 +113,6 @@ public class UserController {
             bacMap.put("msg", "获取用户信息失败");
         }
         return JsonUtils.writeValueAsString(bacMap);
-    }
-
-    // 根据用户code获取用户openid和session_key
-    @RequestMapping(value = "/getUserOpenId", method = RequestMethod.POST)
-    public String getUserOpenId(@RequestParam String code) {
-        String param = "appid=" + appID + "&secret" + appSecret + "&js_code" + code + "&grant_type=authorization_code";
-        return HttpRequest.sendGet("https://api.weixin.qq.com/sns/jscode2session", param);
     }
 
 }

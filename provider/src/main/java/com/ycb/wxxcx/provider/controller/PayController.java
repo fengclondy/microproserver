@@ -2,6 +2,7 @@ package com.ycb.wxxcx.provider.controller;
 
 import com.google.common.base.Charsets;
 import com.ycb.wxxcx.provider.cache.RedisService;
+import com.ycb.wxxcx.provider.constant.GlobalConfig;
 import com.ycb.wxxcx.provider.mapper.*;
 import com.ycb.wxxcx.provider.service.SocketService;
 import com.ycb.wxxcx.provider.utils.HttpRequest;
@@ -91,10 +92,9 @@ public class PayController {
         paramMap.put("goods_tag", "notag");
         paramMap.put("mch_id", mchId);
         paramMap.put("nonce_str", WXPayUtil.getNonce_str());
-        paramMap.put("notify_url", "https://m.pzzhuhui.top/wxpay/payNotify");
+        paramMap.put("notify_url", GlobalConfig.NOTIFY_URL);
         paramMap.put("openid", openid);
         String yyyyMMdd = DateFormatUtils.format(new Date(), "yyyyMMdd");
-        //MCS-20170815-113816-88701
         String hhmmss = DateFormatUtils.format(new Date(), "HHmmss");
         int randomNum = RandomUtils.nextInt(99999);
         String out_trade_no = "MCS-" + yyyyMMdd + "-" + hhmmss + "-" + String.format("%05d", randomNum);

@@ -1,6 +1,7 @@
 package com.ycb.wxxcx.provider.controller;
 
 import com.ycb.wxxcx.provider.cache.RedisService;
+import com.ycb.wxxcx.provider.constant.GlobalConfig;
 import com.ycb.wxxcx.provider.mapper.OrderMapper;
 import com.ycb.wxxcx.provider.mapper.RefundMapper;
 import com.ycb.wxxcx.provider.mapper.UserMapper;
@@ -144,7 +145,7 @@ public class RefundController {
         parameters.put("op_user_id", mchId);// 操作员帐号, 默认为商户号
 
         String xml = WXPayUtil.map2Xml(parameters, key);
-        String createOrderURL = "https://api.mch.weixin.qq.com/secapi/pay/refund";
+        String createOrderURL = GlobalConfig.WX_CREATORDER_URL;
 
         try {
             String mch_id = mchId;
