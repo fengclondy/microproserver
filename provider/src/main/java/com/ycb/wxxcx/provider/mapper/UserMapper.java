@@ -2,6 +2,7 @@ package com.ycb.wxxcx.provider.mapper;
 
 import com.ycb.wxxcx.provider.vo.User;
 import com.ycb.wxxcx.provider.vo.UserInfo;
+import com.ycb.wxxcx.provider.vo.UserInfoVo;
 import org.apache.ibatis.annotations.*;
 
 import java.math.BigDecimal;
@@ -20,7 +21,7 @@ public interface UserMapper {
     void insert(User user);
 
     @Select("SELECT u.id,ui.nickname,u.usablemoney,ui.headimgurl,u.deposit,u.refund FROM ycb_mcs_user u,ycb_mcs_userinfo ui WHERE u.openid=ui.openid AND u.openid = #{openid}")
-    UserInfo findUserinfo(@Param("openid") String openid);
+    UserInfoVo findUserinfo(@Param("openid") String openid);
 
     @Select("SELECT * FROM ycb_mcs_user WHERE openid = #{openid}")
     User findUserinfoByOpenid(@Param("openid") String openid);
