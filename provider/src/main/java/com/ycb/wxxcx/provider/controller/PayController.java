@@ -71,6 +71,12 @@ public class PayController {
     @Autowired
     private HttpServletRequest request;
 
+    @Value("${defaultPay}")
+    private BigDecimal defaultPay;
+
+    @Value("${notifyUrl}")
+    public String notifyUrl;
+
     @RequestMapping(value = "/payment", method = RequestMethod.POST)
     @ResponseBody
     public String payment(@RequestParam("session") String session,
@@ -95,7 +101,7 @@ public class PayController {
                 if (useMoney.compareTo(BigDecimal.valueOf(100)) > 0) {
                     useMoney = BigDecimal.valueOf(100);
                 }
-                userMapper.updateUserDepositUsable(useMoney,user.getId());
+                userMapper.updateUserDepositUsable(useMoney, user.getId());
                 Map<String, Object> data = new HashMap<>();
                 data.put("paytype", 1);//1账户余额支付
                 bacMap.put("data", data);
@@ -104,7 +110,7 @@ public class PayController {
                 bacMap.put("msg", "成功");
             } else {
                 // 统一下单，生成预支付交易单
-                Map<String, Object> paramMap = createPrepayParam(openid);
+                Map<String, Object> paramMap = createPrepayParam(openid, user.getUsablemoney());
                 String preOrderInfo = HttpRequest.sendPost(GlobalConfig.WX_UNIFIEDORDER_URL, WXPayUtil.map2Xml(paramMap, key));
                 //创建订单
                 createPreOrder(sid, cableType, user, paramMap.get("out_trade_no").toString());
@@ -122,10 +128,10 @@ public class PayController {
                 payData.put("package", prePayMap.get("package"));
                 payData.put("signType", prePayMap.get("signType"));
                 payData.put("paySign", paySign);
-                Map<String, Object> data = new HashMap<>();
-                data.put("paytype", 0);//微信支付
-                data.put("wxpay_params", payData);//微信支付
-                bacMap.put("data", data);
+                //Map<String, Object> data = new HashMap<>();
+                bacMap.put("paytype", 0);//微信支付
+                bacMap.put("wxpay_params", payData);//微信支付
+                //bacMap.put("data", data);
                 bacMap.put("code", 0);
                 bacMap.put("errcode", 0);
                 bacMap.put("msg", "成功");
@@ -155,7 +161,7 @@ public class PayController {
         order.setCreatedBy("SYS:prepay");
         order.setCreatedDate(new Date());
         order.setBorrowStationName(station.getTitle());
-        order.setBorrowTime(order.getCreatedDate());
+        //order.setBorrow_time(order.getCreatedDate());预付订单并没有借出成功，不设置借出时间
         order.setOrderid(orderid);//订单编号
         order.setPlatform(3);//平台(小程序)
         order.setPrice(BigDecimal.valueOf(100));//商品价格(元)
@@ -174,9 +180,10 @@ public class PayController {
      * 微信支付参数
      *
      * @param openid
+     * @param usablemoney
      * @return
      */
-    private Map<String, Object> createPrepayParam(String openid) {
+    private Map<String, Object> createPrepayParam(String openid, BigDecimal usablemoney) {
         Map<String, Object> paramMap = new LinkedHashMap<>();
         paramMap.put("appid", appID);
         paramMap.put("attach", "attach");
@@ -184,7 +191,7 @@ public class PayController {
         paramMap.put("goods_tag", "notag");
         paramMap.put("mch_id", mchId);
         paramMap.put("nonce_str", WXPayUtil.getNonce_str());
-        paramMap.put("notify_url", GlobalConfig.NOTIFY_URL);
+        paramMap.put("notify_url", notifyUrl);
         paramMap.put("openid", openid);
         String out_trade_no = WXPayUtil.createOrderId();
         paramMap.put("out_trade_no", out_trade_no);
@@ -198,7 +205,7 @@ public class PayController {
         paramMap.put("spbill_create_ip", remoteAddr);
         // paramMap.put("time_expire", "20170808160434");
         // paramMap.put("time_start", "20170808155434");
-        paramMap.put("total_fee", 1);//费用 TODO
+        paramMap.put("total_fee", defaultPay.subtract(usablemoney).multiply(BigDecimal.valueOf(100)).longValue());//费用 TODO
         paramMap.put("trade_type", "JSAPI");
         return paramMap;
     }
@@ -223,10 +230,10 @@ public class PayController {
                 String outTradeNo = (String) map.get("out_trade_no");
                 String totlaFee = (String) map.get("total_fee");
                 Long paid = Long.valueOf(totlaFee);
-
                 //根据订单查询MAC和CABLE
                 Station station = stationMapper.getMacCableByOrderid(outTradeNo);
                 socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;MAC:" + station.getMac() + ";ORDERID:" + outTradeNo + ";COLORID:7;CABLE:" + station.getCable() + ";\r\n");
+                logger.info("ORDERID:" + outTradeNo + "支付成功！");
                 //修改订单状态为1，已支付
                 Order order = new Order();
                 order.setLastModifiedBy("SYS:pay");
@@ -235,20 +242,13 @@ public class PayController {
                 order.setPaid(BigDecimal.valueOf(paid).divide(BigDecimal.valueOf(100), 2)); //已支付的费用 分转换元
                 order.setOrderid(outTradeNo);
                 orderMapper.updateOrderStatus(order);
-
                 //更新用户账户信息，押金
                 userMapper.updateUserDeposit(BigDecimal.valueOf(paid).divide(BigDecimal.valueOf(100), 2), order.getCustomer());
-
-                boolean isOk = true;
                 // 告诉微信服务器，我收到信息了，不要在调用回调action了
-                if (isOk) {
-                    return WXPayUtil.setXML("SUCCESS", "OK");
-                } else {
-                    return WXPayUtil.setXML("FAIL", "pay fail");
-                }
+                return WXPayUtil.setXML("SUCCESS", "OK");
             }
         } catch (Exception e) {
-            logger.debug("支付失败" + e.getMessage());
+            logger.error("支付失败" + e.getMessage());
             return WXPayUtil.setXML("FAIL", "weixin pay server exception");
         }
         return WXPayUtil.setXML("FAIL", "weixin pay fail");
