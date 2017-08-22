@@ -160,7 +160,7 @@ public class PayController {
         Order order = new Order();
         order.setCreatedBy("SYS:prepay");
         order.setCreatedDate(new Date());
-        order.setborrowStationName(station.getTitle());
+        order.setBorrowStationName(station.getTitle());
         //order.setBorrow_time(order.getCreatedDate());预付订单并没有借出成功，不设置借出时间
         order.setOrderid(orderid);//订单编号
         order.setPlatform(3);//平台(小程序)

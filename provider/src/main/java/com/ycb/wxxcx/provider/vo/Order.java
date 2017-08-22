@@ -6,7 +6,7 @@ import java.util.Date;
 /**
  * Created by zhuhui on 17-6-19.
  */
-public class Order extends BaseEntity {
+public class Order extends BaseEntity{
     // 订单编号
     private String orderid;
     // 订单状态
@@ -50,8 +50,23 @@ public class Order extends BaseEntity {
     //归还站点id
     private Long returnStationId;
 
-    // 收费标准
-    // private Long feeId;
+      // 租借地点
+//    private Long locationId;
+//    // 租借时间
+//    private Date orderTime;
+//    // 收费标准
+//    private Long feeId;
+
+    // 订单状态
+//    private enum OrderStatusEnum{
+//        // 使用中 Using
+//        U,
+//        // 已完成
+//        D,
+//        // 报失 Lost
+//        L
+//    }
+
 
     public String getOrderid() {
         return orderid;
@@ -81,7 +96,7 @@ public class Order extends BaseEntity {
         return borrowStationName;
     }
 
-    public void setborrowStationName(String borrowStationName) {
+    public void setBorrowStationName(String borrowStationName) {
         this.borrowStationName = borrowStationName;
     }
 
@@ -93,6 +108,14 @@ public class Order extends BaseEntity {
         this.borrowTime = borrowTime;
     }
 
+    public Integer getPlatform() {
+        return platform;
+    }
+
+    public void setPlatform(Integer platform) {
+        this.platform = platform;
+    }
+
     public BigDecimal getPaid() {
         return paid;
     }
@@ -101,21 +124,12 @@ public class Order extends BaseEntity {
         this.paid = paid;
     }
 
-
-    public Integer getCable() {
-        return cable;
+    public BigDecimal getUsefee() {
+        return usefee;
     }
 
-    public void setCable(Integer cable) {
-        this.cable = cable;
-    }
-
-    public Integer getPlatform() {
-        return platform;
-    }
-
-    public void setPlatform(Integer platform) {
-        this.platform = platform;
+    public void setUsefee(BigDecimal usefee) {
+        this.usefee = usefee;
     }
 
     public BigDecimal getPrice() {
@@ -132,6 +146,14 @@ public class Order extends BaseEntity {
 
     public void setRefunded(BigDecimal refunded) {
         this.refunded = refunded;
+    }
+
+    public Integer getCable() {
+        return cable;
+    }
+
+    public void setCable(Integer cable) {
+        this.cable = cable;
     }
 
     public String getReturnCity() {
@@ -156,14 +178,6 @@ public class Order extends BaseEntity {
 
     public void setReturnTime(Date returnTime) {
         this.returnTime = returnTime;
-    }
-
-    public BigDecimal getUsefee() {
-        return usefee;
-    }
-
-    public void setUsefee(BigDecimal usefee) {
-        this.usefee = usefee;
     }
 
     public Long getCustomer() {
@@ -198,7 +212,7 @@ public class Order extends BaseEntity {
         this.borrowStationId = borrowStationId;
     }
 
-    public Long getreturnShopId() {
+    public Long getReturnShopId() {
         return returnShopId;
     }
 
