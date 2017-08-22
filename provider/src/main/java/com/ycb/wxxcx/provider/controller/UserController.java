@@ -8,6 +8,7 @@ import com.ycb.wxxcx.provider.utils.JsonUtils;
 import com.ycb.wxxcx.provider.utils.MD5;
 import com.ycb.wxxcx.provider.vo.User;
 import com.ycb.wxxcx.provider.vo.UserInfo;
+import com.ycb.wxxcx.provider.vo.UserInfoVo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -109,12 +110,12 @@ public class UserController {
         Map<String, Object> bacMap = new HashMap<>();
         try {
             String openid = redisService.getKeyValue(session);
-            UserInfo userInfo = this.userMapper.findUserinfo(openid);
-            if (null != userInfo){
+            UserInfoVo userInfoVo = this.userMapper.findUserinfo(openid);
+            if (null != userInfoVo){
                 Map<String, Object> data = new HashMap<>();
                 bacMap.put("code", 0);
                 bacMap.put("msg", "成功");
-                data.put("user_info", userInfo);
+                data.put("user_info", userInfoVo);
                 bacMap.put("data", data);
             }else {
                 bacMap.put("data", null);
