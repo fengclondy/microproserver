@@ -39,9 +39,8 @@ public interface UserMapper {
     @Select("Select id, usablemoney from ycb_mcs_user WHERE openid = #{openid}")
     User findUserIdByOpenid(String openid);
 
-    @Update("Update ycb_mcs_user SET lastModifiedBy='SYS:pay',lastModifiedDate=NOW(),optlock =optlock+1,deposit=deposit+#{paid},usablemoney=0 WHERE id=#{customerid}")
-    void updateUserDeposit(BigDecimal paid, @Param("customerid") Long customerid);
-
+    @Update("Update ycb_mcs_user SET lastModifiedBy='SYS:pay',lastModifiedDate=NOW(),optlock =optlock+1,deposit=deposit+#{paid} WHERE id=#{customerid}")
+    void updateUserDeposit(@Param("paid") BigDecimal paid, @Param("customerid") Long customerid);
 
     @Update("Update ycb_mcs_user SET lastModifiedBy='SYS:pay',lastModifiedDate=NOW(),deposit=deposit+#{deposit},usablemoney=usablemoney-#{usablemoney} WHERE id=#{id}")
     void updateUserDepositUsable(BigDecimal useMoney, Long id);

@@ -8,8 +8,10 @@ import com.ycb.wxxcx.provider.vo.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,6 +33,9 @@ public class BorrowController {
     @Autowired
     private UserMapper userMapper;
 
+    @Value("${defaultPay}")
+    private BigDecimal defaultPay;
+
     @RequestMapping(value = "/getMachineInfo", method = RequestMethod.POST)
     @ResponseBody
     public String getMachineInfo(@RequestParam("session") String session,
@@ -46,10 +51,12 @@ public class BorrowController {
             Map<String, Object> data = new HashMap<>();
             data.put("sid", sid);
             data.put("tid", session);
-            data.put("deposite_need", 0.5);//TODO
-            data.put("usable_money", user.getUsablemoney());
-            data.put("fee_strategy", session);
-            data.put("cable_type", cable_type);
+            data.put("need_pay", defaultPay.subtract(user.getUsablemoney()));//用户需支付金额
+            data.put("deposite_need", defaultPay.subtract(user.getUsablemoney()));//所需押金
+            data.put("usable_money", user.getUsablemoney());//用户可用金额
+            data.put("fee_strategy", "1小时免费时长，超出后每小时收费1元。每天最高收费10元。");//收费策略 TODO
+            data.put("fee_display", true);
+            data.put("cable_type", JsonUtils.readValue(cable_type));
             bacMap.put("data", data);
             bacMap.put("code", 0);
             bacMap.put("msg", "成功");
