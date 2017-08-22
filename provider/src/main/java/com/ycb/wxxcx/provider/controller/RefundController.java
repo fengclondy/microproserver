@@ -65,22 +65,17 @@ public class RefundController {
             bacMap.put("data", null);
             bacMap.put("code", 2);
             bacMap.put("msg", "失败(session不可为空)");
-
             return JsonUtils.writeValueAsString(bacMap);
         }
         try {
             String openid = redisService.getKeyValue(session);
             User user = this.userMapper.findUserinfoByOpenid(openid);
-
             List<Refund> refundList = this.refundMapper.findRefunds(user.getId());
-            Map<String, Object> data = new HashMap<>();
             Map<String, Object> refundData = new HashMap<>();
-            refundData.put("redund_logs",refundList);
-            data.put("data", refundData);
-            bacMap.put("data", data);
+            refundData.put("refund_logs", refundList);
+            bacMap.put("data", refundData);
             bacMap.put("code", 0);
             bacMap.put("msg", "成功");
-
         } catch (Exception e) {
             logger.error(e.getMessage());
             bacMap.put("data", null);
@@ -105,19 +100,19 @@ public class RefundController {
 
         String openid = redisService.getKeyValue(session);
         User user = this.userMapper.findUserMoneyByOpenid(openid);//查询用户可用余额
-        if(user.getUsablemoney() == BigDecimal.ZERO){
+        if (user.getUsablemoney() == BigDecimal.ZERO) {
             bacMap.put("code", 1);
             bacMap.put("msg", "账户余额不足");
             return JsonUtils.writeValueAsString(bacMap);
         }
         //根据用户uid拿订单
-        List<Order> orderList =  this.orderMapper.findOrderListIdByUid(user.getId());
+        List<Order> orderList = this.orderMapper.findOrderListIdByUid(user.getId());
 
-        if (null == orderList || 0 == orderList.size()){
+        if (null == orderList || 0 == orderList.size()) {
             bacMap.put("code", 2);
             bacMap.put("msg", "查询失败,没有可退款的订单)");
             return JsonUtils.writeValueAsString(bacMap);
-        }else {
+        } else {
             Refund newRefund = null;
             for (int i = 0; i < orderList.size(); i++) {
                 //创建退款记录
@@ -133,8 +128,8 @@ public class RefundController {
 
                 String out_trade_no = orderList.get(i).getOrderid();//商户订单号
                 String out_refund_no = newRefund.getId().toString();//商户退款编号
-                Long total_fee = (orderList.get(i).getPaid().longValue())*100;//订单金额
-                Long refund_fee = (refundMoney.longValue())*100;//退款总金额
+                Long total_fee = orderList.get(i).getPaid().multiply(BigDecimal.valueOf(100)).longValueExact();//订单金额
+                Long refund_fee = refundMoney.multiply(BigDecimal.valueOf(100)).longValueExact();//退款总金额
 
                 SortedMap<String, Object> parameters = new TreeMap<String, Object>();
                 parameters.put("appid", appID);//公众账号ID
@@ -144,8 +139,8 @@ public class RefundController {
                 // parameters.put("transaction_id", "微信支付订单中调用统一接口后微信返回的 transaction_id");
                 parameters.put("out_trade_no", out_trade_no);//商户系统内部订单号
                 parameters.put("out_refund_no", out_refund_no); //商户系统内部的退款单号，约束为UK唯一
-                parameters.put("total_fee", total_fee.toString()); //订单总金额：单位为分
-                parameters.put("refund_fee", refund_fee.toString()); //退款总金额：单位为分
+                parameters.put("total_fee", total_fee); //订单总金额：单位为分
+                parameters.put("refund_fee", refund_fee); //退款总金额：单位为分
                 parameters.put("op_user_id", mchId);// 操作员帐号, 默认为商户号
 
                 String xml = WXPayUtil.map2Xml(parameters, key);
@@ -172,7 +167,7 @@ public class RefundController {
                             return JsonUtils.writeValueAsString(bacMap);
 
                         } else {
-                            logger.error("退款失败 退款编号："+ newRefund.getId());
+                            logger.error("退款失败 退款编号：" + newRefund.getId());
                             bacMap.put("code", 5);
                             bacMap.put("msg", "退款失败，返回结果有误");
                             return JsonUtils.writeValueAsString(bacMap);

@@ -40,11 +40,11 @@ public interface UserMapper {
     @Select("Select id, usablemoney from ycb_mcs_user WHERE openid = #{openid}")
     User findUserIdByOpenid(String openid);
 
-    @Update("Update ycb_mcs_user SET lastModifiedBy='SYS:pay',lastModifiedDate=NOW(),optlock =optlock+1,deposit=deposit+#{paid} WHERE id=#{customerid}")
-    void updateUserDeposit(@Param("paid") BigDecimal paid, @Param("customerid") Long customerid);
+    @Update("Update ycb_mcs_user SET lastModifiedBy='SYS:pay',lastModifiedDate=NOW(),optlock =optlock+1,deposit=deposit+#{paid} WHERE id=#{customer}")
+    void updateUserDeposit(@Param("paid") BigDecimal paid, @Param("customer") Long customer);
 
-    @Update("Update ycb_mcs_user SET lastModifiedBy='SYS:pay',lastModifiedDate=NOW(),deposit=deposit+#{deposit},usablemoney=usablemoney-#{usablemoney} WHERE id=#{id}")
-    void updateUserDepositUsable(BigDecimal useMoney, Long id);
+    @Update("Update ycb_mcs_user SET lastModifiedBy='SYS:pay',lastModifiedDate=NOW(),deposit=deposit+#{defaultPay},usablemoney=usablemoney-#{defaultPay} WHERE id=#{id}")
+    void updateUserDepositUsable(@Param("defaultPay") BigDecimal defaultPay, @Param("id") Long id);
 
     @Insert("Insert INTO ycb_mcs_userinfo(createdBy,createdDate,optlock,openid,unionid,nickname,sex,language,city,province,country,headimgurl) " +
             "VALUES(#{createdBy},#{createdDate},#{version},#{openid},#{unionid},#{nickname},#{sex},#{language},#{city},#{province},#{country},#{headimgurl})")

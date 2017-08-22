@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -87,34 +88,32 @@ public class PayController {
         try {
             String openid = redisService.getKeyValue(session);
             User user = userMapper.findUserIdByOpenid(openid);
-            if (user.getUsablemoney().compareTo(BigDecimal.valueOf(95)) > 0) {
-                // 账户内月额大于95 时，直接使用余额支付
-
+            if (defaultPay.subtract(user.getUsablemoney()).compareTo(BigDecimal.ZERO) <= 0) {
+                // need pay 为0时，直接使用余额支付
                 //创建订单
                 String orderid = WXPayUtil.createOrderId();
-                createPreOrder(sid, cableType, user, orderid);
-                //弹出电池
-                String mac = stationMapper.getStationMac(Long.valueOf(sid));
-                socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;MAC:" + mac + ";ORDERID:" + orderid + ";COLORID:7;CABLE:" + cableType + ";\r\n");
+                createPreOrder(sid, cableType, user, orderid, 11);
                 //修改用户账户信息，余额，押金修正
                 BigDecimal useMoney = user.getUsablemoney();
                 if (useMoney.compareTo(BigDecimal.valueOf(100)) > 0) {
                     useMoney = BigDecimal.valueOf(100);
                 }
-                userMapper.updateUserDepositUsable(useMoney, user.getId());
+                userMapper.updateUserDepositUsable(defaultPay, user.getId());
                 Map<String, Object> data = new HashMap<>();
-                data.put("paytype", 1);//1账户余额支付
+                data.put("pay_type", 1);//1账户余额支付
                 bacMap.put("data", data);
                 bacMap.put("code", 0);
                 bacMap.put("errcode", 0);
                 bacMap.put("msg", "成功");
+                //弹出电池
+                String mac = stationMapper.getStationMac(Long.valueOf(sid));
+                socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;MAC:" + mac + ";ORDERID:" + orderid + ";COLORID:7;CABLE:" + cableType + ";\r\n");
             } else {
                 // 统一下单，生成预支付交易单
                 Map<String, Object> paramMap = createPrepayParam(openid, user.getUsablemoney());
                 String preOrderInfo = HttpRequest.sendPost(GlobalConfig.WX_UNIFIEDORDER_URL, WXPayUtil.map2Xml(paramMap, key));
                 //创建订单
-                createPreOrder(sid, cableType, user, paramMap.get("out_trade_no").toString());
-
+                createPreOrder(sid, cableType, user, paramMap.get("out_trade_no").toString(), 0);
                 Map<String, Object> prePayMap = new LinkedHashMap<>();
                 prePayMap.put("appId", WXPayUtil.getAppId(preOrderInfo));
                 prePayMap.put("nonceStr", WXPayUtil.getNonceStr(preOrderInfo));
@@ -153,7 +152,7 @@ public class PayController {
      * @param user
      * @param orderid
      */
-    private void createPreOrder(@RequestParam("sid") String sid, @RequestParam("cable_type") String cableType, User user, String orderid) {
+    private void createPreOrder(@RequestParam("sid") String sid, @RequestParam("cable_type") String cableType, User user, String orderid, Integer orderStatus) {
         Station station = stationMapper.getStationBySid(sid);
         Shop shop = shopMapper.getShopInfoBySid(sid);
         ShopStation shopStation = shopStationMapper.findShopStationIdBySid(sid);
@@ -164,11 +163,11 @@ public class PayController {
         //order.setBorrow_time(order.getCreatedDate());预付订单并没有借出成功，不设置借出时间
         order.setOrderid(orderid);//订单编号
         order.setPlatform(3);//平台(小程序)
-        order.setPrice(BigDecimal.valueOf(100));//商品价格(元)
+        order.setPrice(defaultPay);//商品价格(元)
         order.setPaid(BigDecimal.ZERO);//已支付的费用
         order.setUsefee(BigDecimal.ZERO);//产生的费用
         order.setCable(Integer.valueOf(cableType));
-        order.setStatus(0);//未支付状态
+        order.setStatus(orderStatus);//支付状态
         order.setCustomer(user.getId());//用户id
         order.setBorrowShopId(shop.getId());
         order.setBorrowShopStationId(shopStation.getId());
@@ -230,20 +229,21 @@ public class PayController {
                 String outTradeNo = (String) map.get("out_trade_no");
                 String totlaFee = (String) map.get("total_fee");
                 Long paid = Long.valueOf(totlaFee);
-                //根据订单查询MAC和CABLE
-                Station station = stationMapper.getMacCableByOrderid(outTradeNo);
-                socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;MAC:" + station.getMac() + ";ORDERID:" + outTradeNo + ";COLORID:7;CABLE:" + station.getCable() + ";\r\n");
-                logger.info("ORDERID:" + outTradeNo + "支付成功！");
                 //修改订单状态为1，已支付
                 Order order = new Order();
                 order.setLastModifiedBy("SYS:pay");
                 order.setLastModifiedDate(new Date());
                 order.setStatus(1);//订单状态改为1，已支付
-                order.setPaid(BigDecimal.valueOf(paid).divide(BigDecimal.valueOf(100), 2)); //已支付的费用 分转换元
+                order.setPaid(BigDecimal.valueOf(paid).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)); //已支付的费用 分转换元
                 order.setOrderid(outTradeNo);
                 orderMapper.updateOrderStatus(order);
+                Long customer = orderMapper.getCustomer(outTradeNo);
                 //更新用户账户信息，押金
-                userMapper.updateUserDeposit(BigDecimal.valueOf(paid).divide(BigDecimal.valueOf(100), 2), order.getCustomer());
+                userMapper.updateUserDeposit(BigDecimal.valueOf(paid).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP), customer);
+                //根据订单查询MAC和CABLE
+                Station station = stationMapper.getMacCableByOrderid(outTradeNo);
+                socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;MAC:" + station.getMac() + ";ORDERID:" + outTradeNo + ";COLORID:7;CABLE:" + station.getCable() + ";\r\n");
+                logger.info("ORDERID:" + outTradeNo + "支付成功！");
                 // 告诉微信服务器，我收到信息了，不要在调用回调action了
                 return WXPayUtil.setXML("SUCCESS", "OK");
             }
