@@ -64,9 +64,23 @@ public class UserController {
                 user.setRefund(BigDecimal.ZERO);
                 user.setUsablemoney(BigDecimal.ZERO);
                 user.setPlatform(3);
-                user.setCreatedBy("system");
+                user.setCreatedBy("SYS:login");
                 user.setCreatedDate(new Date());
                 this.userMapper.insert(user);
+                Map<String, Object> userInfoMap = HttpRequest.getUserInfo(encryptedData,sessinKey,iv);
+                UserInfo userInfo = new UserInfo();
+                userInfo.setOpenid(openid);
+                userInfo.setNickname((String) userInfoMap.get("nickName"));
+                userInfo.setSex((Integer) userInfoMap.get("gender"));
+                userInfo.setLanguage((String) userInfoMap.get("language"));
+                userInfo.setCity((String) userInfoMap.get("city"));
+                userInfo.setProvince((String) userInfoMap.get("province"));
+                userInfo.setCountry((String) userInfoMap.get("country"));
+                userInfo.setHeadimgurl((String) userInfoMap.get("avatarUrl"));
+                userInfo.setUnionid((String) userInfoMap.get("unionId"));
+                userInfo.setCreatedBy("SYS:login");
+                userInfo.setCreatedDate(new Date());
+                this.userMapper.insertUserInfo(userInfo);
             } else {
                 optlock++;
                 this.userMapper.update(optlock, new Date(), openid);

@@ -44,4 +44,8 @@ public interface UserMapper {
 
     @Update("Update ycb_mcs_user SET lastModifiedBy='SYS:pay',lastModifiedDate=NOW(),deposit=deposit+#{deposit},usablemoney=usablemoney-#{usablemoney} WHERE id=#{id}")
     void updateUserDepositUsable(BigDecimal useMoney, Long id);
+
+    @Insert("Insert INTO ycb_mcs_userinfo(createdBy,createdDate,optlock,openid,unionid,nickname,sex,language,city,province,country,headimgurl) " +
+            "VALUES(#{createdBy},#{createdDate},#{version},#{openid},#{unionid},#{nickname},#{sex},#{language},#{city},#{province},#{country},#{headimgurl})")
+    void insertUserInfo(UserInfo userInfo);
 }

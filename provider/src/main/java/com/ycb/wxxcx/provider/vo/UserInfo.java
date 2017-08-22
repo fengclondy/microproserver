@@ -1,38 +1,54 @@
 package com.ycb.wxxcx.provider.vo;
 
-import java.math.BigDecimal;
+import java.util.Date;
 
 /**
  * Created by duxinyuan on 11-8-16.
  */
-public class UserInfo{
-    //用户id
-    private String id;
-    //用户昵称
+public class UserInfo extends BaseEntity {
+
+    //@MetaData("用户openid")
+    private String openid;
+
+    //@MetaData("昵称")
     private String nickname;
-    // 账户余额
-    private BigDecimal usablemoney = BigDecimal.ZERO;
-    //头像地址
+
+    //@MetaData("性别")
+    private Integer sex;
+
+    //@MetaData("城市")
+    private String city;
+
+    //@MetaData("省份")
+    private String province;
+
+    //@MetaData("国家")
+    private String country;
+
+    //@MetaData("头像")
     private String headimgurl;
-    // 用户押金
-    private BigDecimal deposit = BigDecimal.ZERO;
-    //提现金额
-    private BigDecimal refund = BigDecimal.ZERO;
 
-    public BigDecimal getUsablemoney() {
-        return usablemoney;
+    //@MetaData("语言")
+    private String language;
+
+    //@MetaData("关注时间")
+    private Date subscribeTime;
+
+    //@MetaData("unionid")
+    private String unionid;
+
+    //@MetaData("remark")
+    private String remark;
+
+    //@MetaData("组")
+    private String groupid;
+
+    public String getOpenid() {
+        return openid;
     }
 
-    public void setUsablemoney(BigDecimal usablemoney) {
-        this.usablemoney = usablemoney;
-    }
-
-    public BigDecimal getDeposit() {
-        return deposit;
-    }
-
-    public void setDeposit(BigDecimal deposit) {
-        this.deposit = deposit;
+    public void setOpenid(String openid) {
+        this.openid = openid;
     }
 
     public String getNickname() {
@@ -43,6 +59,38 @@ public class UserInfo{
         this.nickname = nickname;
     }
 
+    public Integer getSex() {
+        return sex;
+    }
+
+    public void setSex(Integer sex) {
+        this.sex = sex;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getProvince() {
+        return province;
+    }
+
+    public void setProvince(String province) {
+        this.province = province;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
     public String getHeadimgurl() {
         return headimgurl;
     }
@@ -51,19 +99,43 @@ public class UserInfo{
         this.headimgurl = headimgurl;
     }
 
-    public BigDecimal getRefund() {
-        return refund;
+    public String getLanguage() {
+        return language;
     }
 
-    public void setRefund(BigDecimal refund) {
-        this.refund = refund;
+    public void setLanguage(String language) {
+        this.language = language;
     }
 
-    public String getId() {
-        return id;
+    public Date getSubscribeTime() {
+        return subscribeTime;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setSubscribeTime(Date subscribeTime) {
+        this.subscribeTime = subscribeTime;
+    }
+
+    public String getUnionid() {
+        return unionid;
+    }
+
+    public void setUnionid(String unionid) {
+        this.unionid = unionid;
+    }
+
+    public String getRemark() {
+        return remark;
+    }
+
+    public void setRemark(String remark) {
+        this.remark = remark;
+    }
+
+    public String getGroupid() {
+        return groupid;
+    }
+
+    public void setGroupid(String groupid) {
+        this.groupid = groupid;
     }
 }
