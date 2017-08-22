@@ -1,6 +1,7 @@
 package com.ycb.wxxcx.provider.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +16,7 @@ public class JsonUtils {
 
     public static String writeValueAsString(Object value) {
         try {
+            objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
             return objectMapper.writeValueAsString(value);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);

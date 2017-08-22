@@ -15,8 +15,8 @@ public interface OrderMapper {
 
     //通過用戶id查詢交易记录
     @Select("select t.orderid,t.status,t.borrow_station_name,t.borrow_time,1," +
-            "t.return_station_name,t.return_time," +
-            "t.usefee from ycb_mcs_tradelog t where t.customer = #{customer}")
+            "t.return_station_name,t.return_time,t.usefee " +
+            "from ycb_mcs_tradelog t where t.customer = #{customer}")
     @Results(id = "station", value = {
             @Result(property = "orderid", column = "orderid"),
             @Result(property = "status", column = "status"),
@@ -35,13 +35,16 @@ public interface OrderMapper {
     @Insert("INSERT INTO ycb_mcs_tradelog(createdBy,createdDate,optlock," +
             "borrow_city,borrow_station_name,borrow_time,orderid,paid," +
             "platform,price,status,usefee,customer,borrow_shop_id,borrow_shop_station_id," +
-            "borrow_station_id,cable) VALUES(#{createdBy},#{createdDate},0,#{borrow_city}," +
-            "#{borrow_station_name},#{borrow_time},#{orderid},#{paid},#{platform},#{price},#{status}," +
-            "#{usefee},#{customer},#{borrow_shop_id},#{borrow_shop_station_id},#{borrow_station_id},#{cable})")
+            "borrow_station_id,cable) VALUES(#{createdBy},#{createdDate},0,#{borrowCity}," +
+            "#{borrowStationName},#{borrowTime},#{orderid},#{paid},#{platform},#{price},#{status}," +
+            "#{usefee},#{customer},#{borrowShopId},#{borrowShopStationId},#{borrowStationId},#{cable})")
     void saveOrder(Order order);
 
-    @Update("UPDATE ycb_mcs_tradelog SET lastModifiedBy=#{lastModifiedBy}," +
-            "lastModifiedDate=#{lastModifiedDate},status=#{status},paid=#{paid}" +
-            " WHERE orderid=#{orderid}")
+    @Update("UPDATE ycb_mcs_tradelog SET " +
+            "lastModifiedBy=#{lastModifiedBy}, " +
+            "lastModifiedDate=#{lastModifiedDate}, " +
+            "status=#{status}, " +
+            "paid=#{paid} " +
+            "WHERE orderid=#{orderid}")
     void updateOrderStatus(Order order);
 }
