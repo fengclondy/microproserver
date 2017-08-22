@@ -29,7 +29,7 @@ public interface OrderMapper {
     })
     List<TradeLog> findTradeLogs(Long customer);
 
-    @Select("SELECT t.orderid,t.usefee,t.paid FROM ycb_mcs_tradelog t WHERE t.status=3 AND t.customer = #{customer})")
+    @Select("SELECT t.orderid,t.usefee,t.paid FROM ycb_mcs_tradelog t WHERE t.status=3 AND t.customer = #{customer}")
     List<Order> findOrderListIdByUid(Long customer);
 
     @Insert("INSERT INTO ycb_mcs_tradelog(createdBy,createdDate,optlock," +
