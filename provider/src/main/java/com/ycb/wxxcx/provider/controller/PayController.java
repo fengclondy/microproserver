@@ -154,8 +154,8 @@ public class PayController {
         Order order = new Order();
         order.setCreatedBy("SYS:prepay");
         order.setCreatedDate(new Date());
-        order.setBorrow_station_name(station.getTitle());
-        order.setBorrow_time(order.getCreatedDate());
+        order.setBorrowStationName(station.getTitle());
+        order.setBorrowTime(order.getCreatedDate());
         order.setOrderid(orderid);//订单编号
         order.setPlatform(3);//平台(小程序)
         order.setPrice(BigDecimal.valueOf(100));//商品价格(元)
@@ -164,9 +164,9 @@ public class PayController {
         order.setCable(Integer.valueOf(cableType));
         order.setStatus(0);//未支付状态
         order.setCustomer(user.getId());//用户id
-        order.setBorrow_shop_id(shop.getId());
-        order.setBorrow_shop_station_id(shopStation.getId());
-        order.setBorrow_station_id(station.getId());
+        order.setBorrowShopId(shop.getId());
+        order.setBorrowShopStationId(shopStation.getId());
+        order.setBorrowStationId(station.getId());
         orderMapper.saveOrder(order);
     }
 

@@ -29,15 +29,15 @@ public interface OrderMapper {
     })
     List<TradeLog> findTradeLogs(Long customer);
 
-    @Select("SELECT orderid FROM ycb_mcs_tradelog WHERE id = (SELECT MAX(id) FROM ycb_mcs_tradelog WHERE customer = #{customer})")
-    TradeLog findOrderIdByUid(Long customer);
+    @Select("SELECT t.orderid,t.usefee,t.paid FROM ycb_mcs_tradelog t WHERE t.status=3 AND t.customer = #{customer})")
+    List<Order> findOrderListIdByUid(Long customer);
 
     @Insert("INSERT INTO ycb_mcs_tradelog(createdBy,createdDate,optlock," +
             "borrow_city,borrow_station_name,borrow_time,orderid,paid," +
             "platform,price,status,usefee,customer,borrow_shop_id,borrow_shop_station_id," +
-            "borrow_station_id,cable) VALUES(#{createdBy},#{createdDate},0,#{borrow_city}," +
-            "#{borrow_station_name},#{borrow_time},#{orderid},#{paid},#{platform},#{price},#{status}," +
-            "#{usefee},#{customer},#{borrow_shop_id},#{borrow_shop_station_id},#{borrow_station_id},#{cable})")
+            "borrow_station_id,cable) VALUES(#{createdBy},#{createdDate},0,#{borrowCity}," +
+            "#{borrowStationName},#{borrowTime},#{orderid},#{paid},#{platform},#{price},#{status}," +
+            "#{usefee},#{customer},#{borrowShopId},#{borrowShopStationId},#{borrowStationId},#{cable})")
     void saveOrder(Order order);
 
     @Update("UPDATE ycb_mcs_tradelog SET lastModifiedBy=#{lastModifiedBy}," +

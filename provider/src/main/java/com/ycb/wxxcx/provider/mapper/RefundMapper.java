@@ -15,8 +15,8 @@ public interface RefundMapper {
     @Select("SELECT id,refund,status,request_time AS requestTime ,refund_time AS refundTime FROM ycb_mcs_refund_log WHERE uid = #{uid}")
     List<Refund> findRefunds(Long uid);
 
-    @Insert("INSERT INTO ycb_mcs_refund_log(createdBy,createdDate,optlock,refund,request_time,status,uid) " +
-            "VALUES(#{createdBy},NOW(),#{version},#{refund},NOW(),#{status},#{uid})")
+    @Insert("INSERT INTO ycb_mcs_refund_log(createdBy,createdDate,optlock,refund,request_time,orderid,status,uid) " +
+            "VALUES(#{createdBy},NOW(),#{version},#{refund},NOW(),#{orderid},#{status},#{uid})")
     Integer insertRefund(Refund refund);
 
     @Select("SELECT MAX(id) id FROM ycb_mcs_refund_log WHERE uid = #{uid}")

@@ -12,6 +12,9 @@ public class Refund extends BaseEntity{
     //用户编号
     private Long uid;
 
+    //订单编号
+    private String orderid;
+
     //提现金额
     private BigDecimal refund;
 
@@ -62,5 +65,13 @@ public class Refund extends BaseEntity{
 
     public void setRefundTime(Date refundTime) {
         this.refundTime = refundTime;
+    }
+
+    public String getOrderid() {
+        return orderid;
+    }
+
+    public void setOrderid(String orderid) {
+        this.orderid = orderid;
     }
 }
