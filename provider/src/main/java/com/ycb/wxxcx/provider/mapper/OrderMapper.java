@@ -57,7 +57,7 @@ public interface OrderMapper {
             "lastModifiedBy=#{lastModifiedBy}, " +
             "lastModifiedDate=NOW(), " +
             "refunded=#{refunded}, " +
-            "status=#{status}, " +
+            "status=#{status} " +
             "WHERE orderid=#{orderid}")
     void updateOrderStatusToFour(Order order);
 }
