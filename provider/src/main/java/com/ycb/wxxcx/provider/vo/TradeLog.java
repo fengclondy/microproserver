@@ -1,9 +1,8 @@
 package com.ycb.wxxcx.provider.vo;
 
+import com.ycb.wxxcx.provider.utils.TimeUtil;
+
 import java.math.BigDecimal;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  * Created by duxinyuan on 17-6-19.交易記錄   問題：收費策略，時間date
@@ -17,17 +16,19 @@ public class TradeLog {
     // 租借地点
     private String borrowName;
     // 租借时间
-    private Date borrowTime;
+    private String borrowTime;   //原来是date
     // 收费策略
     private String feeStr;
     // 归还地点
     private String returnName;
     //归还时间
-    private Date returnTime;
-    //租借时长 （毫秒）
-    private Long lastTime;
+    private String returnTime;   //原来是date
+    //租借时长
+    private String lastTime;  //原来是long
     //产生费用
     private BigDecimal usefee;
+    //用来接从数据库查出来的时长
+    private Long duration;
 
     public String getOrderid() {
         return orderid;
@@ -53,11 +54,11 @@ public class TradeLog {
         this.borrowName = borrowName;
     }
 
-    public Date getBorrowTime() {
+    public String getBorrowTime() {
         return borrowTime;
     }
 
-    public void setBorrowTime(Date borrowTime) {
+    public void setBorrowTime(String borrowTime) {
         this.borrowTime = borrowTime;
     }
 
@@ -77,12 +78,23 @@ public class TradeLog {
         this.returnName = returnName;
     }
 
-    public Date getReturnTime() {
+    public String getReturnTime() {
         return returnTime;
     }
 
-    public void setReturnTime(Date returnTime) {
+    public void setReturnTime(String returnTime) {
         this.returnTime = returnTime;
+    }
+
+    public String getLastTime() {
+        String returnTime = this.getReturnTime();
+        String borrowTime = this.getBorrowTime();
+        Long duration = this.getDuration();
+        return TimeUtil.calLastTime(returnTime, borrowTime, duration);
+    }
+
+    public void setLastTime(String lastTime) {
+        this.lastTime = lastTime;
     }
 
     public BigDecimal getUsefee() {
@@ -93,31 +105,11 @@ public class TradeLog {
         this.usefee = usefee;
     }
 
-    public Long getLastTime() {
-        //借出时间和归还时间的时间差 单位：毫秒
-        SimpleDateFormat dfs = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        if (null != this.getReturnTime()) {
-            lastTime = this.getReturnTime().getTime() - this.getBorrowTime().getTime();
-        }
-        return lastTime;
+    public Long getDuration() {
+        return duration;
     }
 
-    public void setLastTime(Long lastTime) {
-        this.lastTime = lastTime;
-    }
-
-    @Override
-    public String toString() {
-        return "TradeLog{" +
-                "orderid='" + orderid + '\'' +
-                ", status=" + status +
-                ", borrowName='" + borrowName + '\'' +
-                ", borrowTime=" + borrowTime +
-                ", feeStr='" + feeStr + '\'' +
-                ", returnName='" + returnName + '\'' +
-                ", returnTime=" + returnTime +
-                ", lastTime=" + lastTime +
-                ", usefee=" + usefee +
-                '}';
+    public void setDuration(Long duration) {
+        this.duration = duration;
     }
 }

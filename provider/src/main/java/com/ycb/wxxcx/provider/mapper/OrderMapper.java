@@ -15,8 +15,8 @@ public interface OrderMapper {
 
     //通過用戶id查詢交易记录
     @Select("select t.orderid,t.status,t.borrow_station_name,t.borrow_time,1," +
-            "t.return_station_name,t.return_time,t.usefee " +
-            "from ycb_mcs_tradelog t where t.customer = #{customer}")
+            "t.return_station_name,t.return_time,t.usefee,(UNIX_TIMESTAMP(t.return_time) - UNIX_TIMESTAMP(t.borrow_time)) duration " +
+            "from ycb_mcs_tradelog t where t.customer = #{customer} ORDER BY t.id DESC LIMIT 0,20")
     @Results(id = "station", value = {
             @Result(property = "orderid", column = "orderid"),
             @Result(property = "status", column = "status"),
@@ -25,7 +25,8 @@ public interface OrderMapper {
             @Result(property = "feeStr", column = "1"), //目前没用，随便定义的
             @Result(property = "returnName", column = "return_station_name"),
             @Result(property = "returnTime", column = "return_time"),
-            @Result(property = "usefee", column = "usefee")
+            @Result(property = "usefee", column = "usefee"),
+            @Result(property = "duration", column = "duration")
     })
     List<TradeLog> findTradeLogs(Long customer);
 

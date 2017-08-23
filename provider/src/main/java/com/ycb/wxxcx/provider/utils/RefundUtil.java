@@ -10,6 +10,8 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
 import java.io.ByteArrayInputStream;
@@ -22,6 +24,8 @@ import java.util.Map;
 
 
 public class RefundUtil {
+
+    public static final Logger logger = LoggerFactory.getLogger(RefundUtil.class);
 
     public static CloseableHttpClient httpclient;
 
@@ -77,6 +81,7 @@ public class RefundUtil {
             HttpResponse response = httpclient.execute(httpost);
             String jsonStr = EntityUtils.toString(response.getEntity(), "UTF-8");
             if (jsonStr.indexOf("FAIL") >= 0) {
+                logger.error("提现请求失败:"+jsonStr);
                 return null;
             }
             doXMLtoMap = XmlUtil.doXMLParse(jsonStr);

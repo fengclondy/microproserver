@@ -165,6 +165,7 @@ public class RefundController {
                             this.refundMapper.updateStatus(newRefund);
                             //减掉用户可用余额
                             user.setLastModifiedBy("SYS:refund");
+                            user.setRefund(refundMoney);  //需要减掉的金额
                             this.userMapper.updateUsablemoneyByUid(user);
 
                             bacMap.put("code", 0);
@@ -172,7 +173,8 @@ public class RefundController {
                             return JsonUtils.writeValueAsString(bacMap);
 
                         } else {
-                            logger.error("退款失败 退款编号："+ newRefund.getId());
+                            String return_msg = (String) map.get("return_msg");
+                            logger.error("退款失败 退款编号："+ newRefund.getId()+"描述:"+return_msg);
                             bacMap.put("code", 5);
                             bacMap.put("msg", "退款失败，返回结果有误");
                             return JsonUtils.writeValueAsString(bacMap);

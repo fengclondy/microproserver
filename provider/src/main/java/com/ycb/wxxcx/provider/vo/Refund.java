@@ -22,10 +22,10 @@ public class Refund extends BaseEntity{
     private Integer status;
 
     //发起时间
-    private Date requestTime;
+    private String requestTime;   //以前用date
 
     //提现时间
-    private Date refundTime;
+    private String refundTime;    //以前用date
 
     public Long getUid() {
         return uid;
@@ -51,19 +51,19 @@ public class Refund extends BaseEntity{
         this.status = status;
     }
 
-    public Date getRequestTime() {
+    public String getRequestTime() {
         return requestTime;
     }
 
-    public void setRequestTime(Date requestTime) {
+    public void setRequestTime(String requestTime) {
         this.requestTime = requestTime;
     }
 
-    public Date getRefundTime() {
+    public String getRefundTime() {
         return refundTime;
     }
 
-    public void setRefundTime(Date refundTime) {
+    public void setRefundTime(String refundTime) {
         this.refundTime = refundTime;
     }
 
