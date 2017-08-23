@@ -1,7 +1,6 @@
 package com.ycb.wxxcx.provider.vo;
 
 import java.math.BigDecimal;
-
 import java.util.Date;
 
 /**
@@ -22,10 +21,10 @@ public class Refund extends BaseEntity{
     private Integer status;
 
     //发起时间
-    private String requestTime;   //以前用date
+    private Date requestTime;
 
     //提现时间
-    private String refundTime;    //以前用date
+    private Date refundTime;
 
     public Long getUid() {
         return uid;
@@ -51,19 +50,19 @@ public class Refund extends BaseEntity{
         this.status = status;
     }
 
-    public String getRequestTime() {
+    public Date getRequestTime() {
         return requestTime;
     }
 
-    public void setRequestTime(String requestTime) {
+    public void setRequestTime(Date requestTime) {
         this.requestTime = requestTime;
     }
 
-    public String getRefundTime() {
+    public Date getRefundTime() {
         return refundTime;
     }
 
-    public void setRefundTime(String refundTime) {
+    public void setRefundTime(Date refundTime) {
         this.refundTime = refundTime;
     }
 
