@@ -48,4 +48,8 @@ public interface OrderMapper {
             "paid=#{paid} " +
             "WHERE orderid=#{orderid}")
     void updateOrderStatus(Order order);
+
+    @Select("SELECT customer " +
+            "FROM ycb_mcs_tradelog where orderid = #{orderid}")
+    Long getCustomer(String orderid);
 }
