@@ -95,6 +95,8 @@ public class RefundController {
         if (StringUtils.isEmpty(session)) {
             bacMap.put("code", 1000);
             bacMap.put("msg", "失败(session不可为空)");
+            bacMap.put("errcode", 1000);
+            bacMap.put("errmsg", "失败(session不可为空)");
             return JsonUtils.writeValueAsString(bacMap);
         }
 
@@ -103,6 +105,8 @@ public class RefundController {
         if (user.getUsablemoney() == BigDecimal.ZERO) {
             bacMap.put("code", 1);
             bacMap.put("msg", "账户余额不足");
+            bacMap.put("errcode", 1);
+            bacMap.put("errmsg", "账户余额不足");
             return JsonUtils.writeValueAsString(bacMap);
         }
         //根据用户uid拿订单
@@ -111,6 +115,8 @@ public class RefundController {
         if (null == orderList || 0 == orderList.size()) {
             bacMap.put("code", 2);
             bacMap.put("msg", "查询失败,没有可退款的订单)");
+            bacMap.put("errcode", 2);
+            bacMap.put("errmsg", "查询失败,没有可退款的订单)");
             return JsonUtils.writeValueAsString(bacMap);
         } else {
             Refund newRefund = null;
@@ -124,6 +130,12 @@ public class RefundController {
                 refund.setUid(user.getId());
                 refund.setCreatedBy("SYS:refund");
                 this.refundMapper.insertRefund(refund);//写入退款记录表
+
+                //更新用户待退款金额
+                user.setRefund(refundMoney);
+                user.setLastModifiedBy("SYS:refund");
+                this.userMapper.updateUserRefund(user);
+
                 newRefund = this.refundMapper.findRefundIdByUid(user.getId());//拿退款编号
 
                 String out_trade_no = orderList.get(i).getOrderid();//商户订单号
@@ -158,7 +170,7 @@ public class RefundController {
                             newRefund.setRefund(refundMoney);
                             newRefund.setStatus(2);//退款成功
                             this.refundMapper.updateStatus(newRefund);
-                            //减掉用户可用余额
+                            //减掉用户的可用余额，减掉待退款金额，更新已退款金额
                             user.setLastModifiedBy("SYS:refund");
                             user.setRefund(refundMoney);  //需要减掉的金额
                             this.userMapper.updateUsablemoneyByUid(user);
@@ -167,26 +179,34 @@ public class RefundController {
                             order.setOrderid(orderList.get(i).getOrderid());
                             order.setLastModifiedBy("SYS:refund");
                             order.setStatus(4);
-                            order.setRefunded(refundMoney);
+                            order.setRefunded(refundMoney);  //更新已退款至账户的金额
                             this.orderMapper.updateOrderStatusToFour(order);
                             bacMap.put("code", 0);
                             bacMap.put("msg", "退款成功");
+                            bacMap.put("errcode", 0);
+                            bacMap.put("errmsg", "退款成功");
                         } else {
                             String return_msg = (String) map.get("return_msg");
                             logger.error("退款失败 退款编号："+ newRefund.getId()+"描述:"+return_msg);
                             bacMap.put("code", 5);
                             bacMap.put("msg", "退款失败，返回结果有误");
+                            bacMap.put("errcode", 5);
+                            bacMap.put("errmsg", "退款失败，返回结果有误");
                         }
                     } else {
                         logger.error("签名失败");
                         bacMap.put("code", 4);
                         bacMap.put("msg", "签名失败，参数格式校验错误");
+                        bacMap.put("errcode", 4);
+                        bacMap.put("errmsg", "签名失败，参数格式校验错误");
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                     logger.error("异常退款编号："+ newRefund.getId());
                     bacMap.put("code", 3);
                     bacMap.put("msg", "退款失败（系统有异常）");
+                    bacMap.put("errcode", 3);
+                    bacMap.put("errmsg", "退款失败（系统有异常）");
                     return JsonUtils.writeValueAsString(bacMap);
                 }
             }

@@ -18,7 +18,7 @@ public class User extends BaseEntity {
     // 押金
     private BigDecimal deposit = BigDecimal.ZERO;
 
-    // 待退款数目
+    // 待退款金额
     private BigDecimal refund = BigDecimal.ZERO;
 
     public String getOpenid() {
