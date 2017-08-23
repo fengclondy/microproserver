@@ -20,7 +20,7 @@ public class TimeUtil {
                 diff = (d1.getTime() - d2.getTime()) / 1000;//这样得到的差值是秒
             } catch (Exception e) {
                 e.printStackTrace();
-                return null;
+                return "";
             }
         } else {
             diff = duration;
@@ -46,9 +46,9 @@ public class TimeUtil {
             // lastTime = ""+days+"天"+hours+"小时"+minutes+"分"+ss+"秒";
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            return "";
         }
-        return null;
+        return "";
     }
 
 }
