@@ -162,32 +162,35 @@ public class RefundController {
                             user.setLastModifiedBy("SYS:refund");
                             user.setRefund(refundMoney);  //需要减掉的金额
                             this.userMapper.updateUsablemoneyByUid(user);
-
+                            //修改订单表里的状态为4 已退款状态
+                            Order order = new Order();
+                            order.setOrderid(orderList.get(i).getOrderid());
+                            order.setLastModifiedBy("SYS:refund");
+                            order.setStatus(4);
+                            order.setRefunded(refundMoney);
+                            this.orderMapper.updateOrderStatusToFour(order);
                             bacMap.put("code", 0);
                             bacMap.put("msg", "退款成功");
-                            return JsonUtils.writeValueAsString(bacMap);
-
                         } else {
                             String return_msg = (String) map.get("return_msg");
                             logger.error("退款失败 退款编号："+ newRefund.getId()+"描述:"+return_msg);
                             bacMap.put("code", 5);
                             bacMap.put("msg", "退款失败，返回结果有误");
-                            return JsonUtils.writeValueAsString(bacMap);
                         }
                     } else {
                         logger.error("签名失败");
                         bacMap.put("code", 4);
                         bacMap.put("msg", "签名失败，参数格式校验错误");
-                        return JsonUtils.writeValueAsString(bacMap);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
+                    logger.error("异常退款编号："+ newRefund.getId());
                     bacMap.put("code", 3);
                     bacMap.put("msg", "退款失败（系统有异常）");
                     return JsonUtils.writeValueAsString(bacMap);
                 }
             }
         }
-        return null;
+        return JsonUtils.writeValueAsString(bacMap);
     }
 }

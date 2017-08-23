@@ -52,4 +52,12 @@ public interface OrderMapper {
     @Select("SELECT customer " +
             "FROM ycb_mcs_tradelog where orderid = #{orderid}")
     Long getCustomer(String orderid);
+
+    @Update("UPDATE ycb_mcs_tradelog SET " +
+            "lastModifiedBy=#{lastModifiedBy}, " +
+            "lastModifiedDate=NOW(), " +
+            "refunded=#{refunded}, " +
+            "status=#{status}, " +
+            "WHERE orderid=#{orderid}")
+    void updateOrderStatusToFour(Order order);
 }
