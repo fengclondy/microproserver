@@ -12,8 +12,8 @@ import java.util.List;
 @Mapper
 public interface RefundMapper {
 
-    @Select("SELECT id,refund,status,request_time AS requestTime ,refund_time AS refundTime " +
-            "FROM ycb_mcs_refund_log WHERE uid = #{uid} ORDER BY id DESC LIMIT 0,20")
+    @Select("SELECT id,refund,status,UNIX_TIMESTAMP(request_time) AS requestTime ,UNIX_TIMESTAMP(refund_time) AS refundTime\n" +
+            "            FROM ycb_mcs_refund_log WHERE uid = #{uid} ORDER BY id DESC LIMIT 0,20")
     List<Refund> findRefunds(Long uid);
 
     @Insert("INSERT INTO ycb_mcs_refund_log(createdBy,createdDate,optlock,refund,request_time,orderid,status,uid) " +
