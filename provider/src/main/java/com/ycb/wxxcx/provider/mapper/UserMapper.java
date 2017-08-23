@@ -34,7 +34,7 @@ public interface UserMapper {
     @Select("Select id,usablemoney from ycb_mcs_user WHERE openid = #{openid}")
     User findUserMoneyByOpenid(String openid);
 
-    @Update("Update ycb_mcs_user SET lastModifiedBy=#{lastModifiedBy},lastModifiedDate=NOW(),usablemoney=usablemoney-#{refund} WHERE id=#{id}")
+    @Update("Update ycb_mcs_user SET lastModifiedBy=#{lastModifiedBy},lastModifiedDate=NOW(),usablemoney=usablemoney-#{refund},refund=refund-#{refund},refunded=refunded+#{refunded} WHERE id=#{id}")
     void updateUsablemoneyByUid(User user);
 
     @Select("Select id, usablemoney from ycb_mcs_user WHERE openid = #{openid}")
@@ -49,4 +49,7 @@ public interface UserMapper {
     @Insert("Insert INTO ycb_mcs_userinfo(createdBy,createdDate,optlock,openid,unionid,nickname,sex,language,city,province,country,headimgurl) " +
             "VALUES(#{createdBy},#{createdDate},#{version},#{openid},#{unionid},#{nickname},#{sex},#{language},#{city},#{province},#{country},#{headimgurl})")
     void insertUserInfo(UserInfo userInfo);
+
+    @Update("Update ycb_mcs_user SET lastModifiedBy=#{lastModifiedBy},lastModifiedDate=NOW(),refund=refund+#{refund} WHERE id=#{id}")
+    void updateUserRefund(User user);
 }
