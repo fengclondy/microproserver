@@ -80,7 +80,6 @@ public class TradeLog {
 
     public String getReturnTime() {
         return returnTime=="" ? "" : returnTime.substring(0,returnTime.length()-2);
-        //return borrowTime==null ? "" : borrowTime.substring(0,borrowTime.length()-2);
     }
 
     public void setReturnTime(String returnTime) {
