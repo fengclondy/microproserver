@@ -1,16 +1,16 @@
 package com.ycb.wxxcx.provider.controller;
 
+import com.google.common.base.Charsets;
 import com.ycb.wxxcx.provider.cache.RedisService;
 import com.ycb.wxxcx.provider.constant.GlobalConfig;
 import com.ycb.wxxcx.provider.mapper.OrderMapper;
 import com.ycb.wxxcx.provider.mapper.RefundMapper;
 import com.ycb.wxxcx.provider.mapper.UserMapper;
-import com.ycb.wxxcx.provider.utils.JsonUtils;
-import com.ycb.wxxcx.provider.utils.RefundUtil;
-import com.ycb.wxxcx.provider.utils.WXPayUtil;
+import com.ycb.wxxcx.provider.utils.*;
 import com.ycb.wxxcx.provider.vo.Order;
 import com.ycb.wxxcx.provider.vo.Refund;
 import com.ycb.wxxcx.provider.vo.User;
+import org.apache.catalina.servlet4preview.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +18,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.util.*;
@@ -165,11 +168,11 @@ public class RefundController {
                         String return_code = (String) map.get("return_code");//返回状态码
                         String result_code = (String) map.get("result_code");//业务结果
                         if (return_code.equals("SUCCESS") && result_code.equals("SUCCESS")) {
-                            //修改退款状态为成功(2)
+                            //更新退款金额
                             newRefund.setLastModifiedBy("SYS:refund");
                             newRefund.setRefund(refundMoney);
-                            newRefund.setStatus(2);//退款成功
-                            this.refundMapper.updateStatus(newRefund);
+                            //newRefund.setStatus(2);//退款成功
+                            this.refundMapper.updateRefunded(newRefund);
                             //减掉用户的可用余额，减掉待退款金额，更新已退款金额
                             user.setLastModifiedBy("SYS:refund");
                             user.setRefund(refundMoney);  //需要减掉的金额
@@ -213,4 +216,104 @@ public class RefundController {
         }
         return JsonUtils.writeValueAsString(bacMap);
     }
+
+    //
+    @RequestMapping(value = "/refundNotify", method = {RequestMethod.GET, RequestMethod.POST})
+    public String refundNotify(HttpServletRequest request) {
+        try {
+            String responseStr = parseWeixinCallback(request); //微信返回的结果
+            Map<String, Object> map = XmlUtil.doXMLParse(responseStr);
+
+            if ("FAIL".equalsIgnoreCase(map.get("result_code").toString())) {
+                logger.error("微信回调失败");
+                return WXPayUtil.setXML("FAIL", "weixin refund fail");
+            }
+            if ("SUCCESS".equalsIgnoreCase(map.get("result_code").toString())) {
+                //获取应用服务器需要的数据进行持久化操作
+                String appid = (String) map.get("appid"); //公众账号ID
+                String mch_id = (String) map.get("mch_id");//退款的商户号
+                String nonce_str = (String) map.get("nonce_str");//随机字符串
+                String req_info = (String) map.get("req_info"); //加密信息
+
+                //用户KEY做MD5后的值
+                String keymd5 = "9f37ebd96ddded59b20b515eb1acad93";
+
+                Map<String, Object> refundMap = HttpRequest.getRefundInfo(req_info,keymd5);
+
+                String outTradeNo = (String) refundMap.get("out_trade_no");
+                String outRefundNo = (String) refundMap.get("out_refund_no");
+                String refundStatus = (String) refundMap.get("refund_status");
+
+                Long refundId = Long.valueOf(outRefundNo);
+                Refund refund = new Refund();
+                refund.setId(refundId);
+                refund.setLastModifiedBy("SYS:refund");
+
+                if ("SUCCESS".equalsIgnoreCase(refundStatus.toString())) {
+                    //微信那边退款成功  更新状态和到账时间
+                    refund.setStatus(2);//退款成功
+                    this.refundMapper.updateStatus(refund);
+                    logger.info("REFUNDID:" + outRefundNo + "退款到账成功！");
+
+                }else if ("CHANGE".equalsIgnoreCase(refundStatus.toString())){
+                    //退款异常
+                    refund.setDetail("微信向用户退款异常");
+                    this.refundMapper.updateRefundDetail(refund);
+                    logger.info("REFUNDID:" + outRefundNo + "退款异常！");
+
+                }else if ("REFUNDCLOSE".equalsIgnoreCase(refundStatus.toString())){
+                    //退款关闭
+                    refund.setDetail("微信向用户退款关闭");
+                    this.refundMapper.updateRefundDetail(refund);
+                    logger.info("REFUNDID:" + outRefundNo + "退款关闭！");
+
+                }
+                // 告诉微信服务器，我收到信息了，不要在调用回调action了
+                return WXPayUtil.setXML("SUCCESS", "OK");
+            }
+        } catch (Exception e) {
+            logger.error("退款失败" + e.getMessage());
+            return WXPayUtil.setXML("FAIL", "weixin refund server exception");
+        }
+        return WXPayUtil.setXML("FAIL", "weixin refund fail");
+    }
+
+    /**
+     * 解析微信回调参数
+     *
+     * @param request
+     * @return
+     * @throws IOException
+     */
+    private String parseWeixinCallback(HttpServletRequest request) throws IOException {
+        // 获取微信调用我们notify_url的返回信息
+        String result = "";
+        InputStream inStream = request.getInputStream();
+        ByteArrayOutputStream outSteam = new ByteArrayOutputStream();
+        try {
+            byte[] buffer = new byte[1024];
+            int len = 0;
+            while ((len = inStream.read(buffer)) != -1) {
+                outSteam.write(buffer, 0, len);
+            }
+            result = new String(outSteam.toByteArray(), Charsets.UTF_8.toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (outSteam != null) {
+                    outSteam.close();
+                    outSteam = null; // help GC
+                }
+                if (inStream != null) {
+                    inStream.close();
+                    inStream = null;// help GC
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return result;
+    }
+
 }

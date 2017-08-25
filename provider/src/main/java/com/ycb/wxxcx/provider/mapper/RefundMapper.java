@@ -23,6 +23,12 @@ public interface RefundMapper {
     @Select("SELECT MAX(id) id FROM ycb_mcs_refund_log WHERE uid = #{uid}")
     Refund findRefundIdByUid(Long uid);
 
-    @Update("UPDATE ycb_mcs_refund_log SET lastModifiedBy=#{lastModifiedBy},lastModifiedDate=NOW(),refund_time=NOW(),refunded=#{refund},status=#{status} WHERE id=#{id}")
+    @Update("UPDATE ycb_mcs_refund_log SET lastModifiedBy=#{lastModifiedBy},lastModifiedDate=NOW(),refund_time=NOW(),status=#{status} WHERE id=#{id}")
     void updateStatus(Refund refund);
+
+    @Update("UPDATE ycb_mcs_refund_log SET lastModifiedBy=#{lastModifiedBy},lastModifiedDate=NOW(),refunded=#{refund} WHERE id=#{id}")
+    void updateRefunded(Refund refund);
+
+    @Update("UPDATE ycb_mcs_refund_log SET lastModifiedBy=#{lastModifiedBy},lastModifiedDate=NOW(),detail=#{detail} WHERE id=#{id}")
+    void updateRefundDetail(Refund refund);
 }
