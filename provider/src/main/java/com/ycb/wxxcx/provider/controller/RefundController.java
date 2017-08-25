@@ -219,6 +219,7 @@ public class RefundController {
 
     //
     @RequestMapping(value = "/refundNotify", method = {RequestMethod.GET, RequestMethod.POST})
+    @ResponseBody
     public String refundNotify(HttpServletRequest request) {
         try {
             String responseStr = parseWeixinCallback(request); //微信返回的结果
