@@ -1,6 +1,7 @@
 package com.ycb.wxxcx.provider.vo;
 
 import com.ycb.wxxcx.provider.utils.TimeUtil;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 
@@ -14,17 +15,17 @@ public class TradeLog {
     // 订单状态
     private Integer status;
     // 租借地点
-    private String borrowName="";
+    private String borrowName = "";
     // 租借时间
-    private String borrowTime="";   //原来是date
+    private String borrowTime = "";   //原来是date
     // 收费策略
-    private String feeStr="";
+    private String feeStr = "";
     // 归还地点
-    private String returnName="";
+    private String returnName = "";
     //归还时间
-    private String returnTime="";   //原来是date
+    private String returnTime = "";   //原来是date
     //租借时长
-    private String lastTime="";  //原来是long
+    private String lastTime = "";  //原来是long
     //产生费用
     private BigDecimal usefee;
     //用来接从数据库查出来的时长
@@ -55,7 +56,7 @@ public class TradeLog {
     }
 
     public String getBorrowTime() {
-        return borrowTime==null ? "" : borrowTime.substring(0,borrowTime.length()-2);
+        return StringUtils.isEmpty(borrowTime) ? "" : borrowTime.substring(0, borrowTime.length() - 2);
     }
 
     public void setBorrowTime(String borrowTime) {
@@ -79,7 +80,7 @@ public class TradeLog {
     }
 
     public String getReturnTime() {
-        return returnTime=="" ? "" : returnTime.substring(0,returnTime.length()-2);
+        return StringUtils.isEmpty(returnTime) ? "" : returnTime.substring(0, returnTime.length() - 2);
     }
 
     public void setReturnTime(String returnTime) {

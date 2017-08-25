@@ -21,6 +21,9 @@ public class User extends BaseEntity {
     // 待退款金额
     private BigDecimal refund = BigDecimal.ZERO;
 
+    // 已退款金额
+    private BigDecimal refunded = BigDecimal.ZERO;
+
     public String getOpenid() {
         return openid;
     }
@@ -59,5 +62,13 @@ public class User extends BaseEntity {
 
     public void setRefund(BigDecimal refund) {
         this.refund = refund;
+    }
+
+    public BigDecimal getRefunded() {
+        return refunded;
+    }
+
+    public void setRefunded(BigDecimal refunded) {
+        this.refunded = refunded;
     }
 }

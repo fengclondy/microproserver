@@ -16,8 +16,8 @@ public interface UserMapper {
     @Select("Select optlock from ycb_mcs_user WHERE openid = #{openid}")
     Integer findByOpenid(@Param("openid") String openid);
 
-    @Insert("Insert INTO ycb_mcs_user(createdBy,createdDate,optlock,openid,platform,usablemoney,deposit,refund,unsubscribe) " +
-            "VALUES(#{createdBy},#{createdDate},#{version},#{openid},#{platform},#{usablemoney},#{deposit},#{refund},0)")
+    @Insert("Insert INTO ycb_mcs_user(createdBy,createdDate,optlock,openid,platform,usablemoney,deposit,refund,refunded,unsubscribe) " +
+            "VALUES(#{createdBy},#{createdDate},#{version},#{openid},#{platform},#{usablemoney},#{deposit},#{refund},#{refunded},0)")
     void insert(User user);
 
     @Select("SELECT u.id,ui.nickname,u.usablemoney,ui.headimgurl,u.deposit,u.refund FROM ycb_mcs_user u,ycb_mcs_userinfo ui WHERE u.openid=ui.openid AND u.openid = #{openid}")

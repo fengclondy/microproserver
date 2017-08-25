@@ -14,9 +14,12 @@ import java.util.List;
 public interface OrderMapper {
 
     //通過用戶id查詢交易记录
-    @Select("select t.orderid,t.status,t.borrow_station_name,t.borrow_time,1," +
+    @Select("SELECT t.orderid,t.status,t.borrow_station_name,t.borrow_time,1, " +
             "t.return_station_name,t.return_time,t.usefee,(UNIX_TIMESTAMP(t.return_time) - UNIX_TIMESTAMP(t.borrow_time)) duration " +
-            "from ycb_mcs_tradelog t where t.customer = #{customer} ORDER BY t.id DESC LIMIT 0,20")
+            "FROM ycb_mcs_tradelog t " +
+            "WHERE t.customer = #{customer} " +
+            "AND status <> 0 " +
+            "ORDER BY t.id DESC LIMIT 0,20")
     @Results(id = "station", value = {
             @Result(property = "orderid", column = "orderid"),
             @Result(property = "status", column = "status"),

@@ -64,6 +64,7 @@ public class UserController {
                 user.setDeposit(BigDecimal.ZERO);
                 user.setRefund(BigDecimal.ZERO);
                 user.setUsablemoney(BigDecimal.ZERO);
+                user.setRefunded(BigDecimal.ZERO);
                 user.setPlatform(3);
                 user.setCreatedBy("SYS:login");
                 user.setCreatedDate(new Date());

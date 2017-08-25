@@ -103,7 +103,7 @@ public class PayController {
                 bacMap.put("msg", "成功");
                 //弹出电池
                 String mac = stationMapper.getStationMac(Long.valueOf(sid));
-                socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;MAC:" + mac + ";ORDERID:" + orderid + ";COLORID:7;CABLE:" + cableType + ";\r\n");
+                socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;STATIONID:" + sid + ";MAC:" + mac + ";ORDERID:" + orderid + ";COLORID:7;CABLE:" + cableType + ";\r\n");
             } else {
                 // 统一下单，生成预支付交易单
                 Map<String, Object> paramMap = createPrepayParam(openid, user.getUsablemoney());
@@ -241,7 +241,7 @@ public class PayController {
                     userMapper.updateUserDeposit(BigDecimal.valueOf(paid).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP), customer);
                     //根据订单查询MAC和CABLE
                     Station station = stationMapper.getMacCableByOrderid(outTradeNo);
-                    socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;MAC:" + station.getMac() + ";ORDERID:" + outTradeNo + ";COLORID:7;CABLE:" + station.getCable() + ";\r\n");
+                    socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;STATIONID:" + station.getId() + ";MAC:" + station.getMac() + ";ORDERID:" + outTradeNo + ";COLORID:7;CABLE:" + station.getCable() + ";\r\n");
                     logger.info("ORDERID:" + outTradeNo + "支付成功！");
                 }
                 // 告诉微信服务器，我收到信息了，不要在调用回调action了

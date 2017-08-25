@@ -221,11 +221,11 @@ public class RefundController {
             String responseStr = HttpRequest.parseWeixinCallback(request); //微信返回的结果
             Map<String, Object> map = XmlUtil.doXMLParse(responseStr);
 
-            if ("FAIL".equalsIgnoreCase(map.get("result_code").toString())) {
+            if ("FAIL".equalsIgnoreCase(map.get("return_code").toString())) {
                 logger.error("微信回调失败");
                 return WXPayUtil.setXML("FAIL", "weixin refund fail");
             }
-            if ("SUCCESS".equalsIgnoreCase(map.get("result_code").toString())) {
+            if ("SUCCESS".equalsIgnoreCase(map.get("return_code").toString())) {
                 //获取应用服务器需要的数据进行持久化操作
                 String appid = (String) map.get("appid"); //公众账号ID
                 String mch_id = (String) map.get("mch_id");//退款的商户号
@@ -233,9 +233,7 @@ public class RefundController {
                 String req_info = (String) map.get("req_info"); //加密信息
 
                 //用户KEY做MD5后的值
-                String keymd5 = "9f37ebd96ddded59b20b515eb1acad93";
-
-                Map<String, Object> refundMap = HttpRequest.getRefundInfo(req_info,keymd5);
+                Map<String, Object> refundMap = HttpRequest.getRefundInfo(req_info,key);
 
                 String outTradeNo = (String) refundMap.get("out_trade_no");
                 String outRefundNo = (String) refundMap.get("out_refund_no");
