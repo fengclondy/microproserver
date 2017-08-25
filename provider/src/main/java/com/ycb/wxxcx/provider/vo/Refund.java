@@ -25,6 +25,9 @@ public class Refund extends BaseEntity{
     //提现时间
     private String refundTime="";
 
+    //退款描述
+    private String detail;
+
     public Long getUid() {
         return uid;
     }
@@ -71,5 +74,13 @@ public class Refund extends BaseEntity{
 
     public void setOrderid(String orderid) {
         this.orderid = orderid;
+    }
+
+    public String getDetail() {
+        return detail;
+    }
+
+    public void setDetail(String detail) {
+        this.detail = detail;
     }
 }
