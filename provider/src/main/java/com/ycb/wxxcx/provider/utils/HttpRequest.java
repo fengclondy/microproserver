@@ -4,6 +4,7 @@ import com.google.common.base.Charsets;
 import org.apache.catalina.servlet4preview.http.HttpServletRequest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Base64;
+import org.jdom.JDOMException;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -215,7 +216,7 @@ public class HttpRequest {
             byte[] resultByte = cipher.doFinal(dataByte);
             if (null != resultByte && resultByte.length > 0) {
                 String result = new String(resultByte, "UTF-8");
-                return JsonUtils.readValue(result);
+                return XmlUtil.doXMLParse(result);
             }
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
@@ -228,6 +229,10 @@ public class HttpRequest {
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        } catch (JDOMException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         }
         return null;
