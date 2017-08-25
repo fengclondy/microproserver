@@ -60,4 +60,8 @@ public interface OrderMapper {
             "status=#{status} " +
             "WHERE orderid=#{orderid}")
     void updateOrderStatusToFour(Order order);
+
+    @Select("SELECT status " +
+            "FROM ycb_mcs_tradelog where orderid = #{orderid}")
+    Integer getOrderStatus(String outTradeNo);
 }

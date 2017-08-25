@@ -1,6 +1,5 @@
 package com.ycb.wxxcx.provider.controller;
 
-import com.google.common.base.Charsets;
 import com.ycb.wxxcx.provider.cache.RedisService;
 import com.ycb.wxxcx.provider.constant.GlobalConfig;
 import com.ycb.wxxcx.provider.mapper.OrderMapper;
@@ -18,9 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.util.*;
@@ -222,7 +218,7 @@ public class RefundController {
     @ResponseBody
     public String refundNotify(HttpServletRequest request) {
         try {
-            String responseStr = parseWeixinCallback(request); //微信返回的结果
+            String responseStr = HttpRequest.parseWeixinCallback(request); //微信返回的结果
             Map<String, Object> map = XmlUtil.doXMLParse(responseStr);
 
             if ("FAIL".equalsIgnoreCase(map.get("result_code").toString())) {
@@ -278,43 +274,4 @@ public class RefundController {
         }
         return WXPayUtil.setXML("FAIL", "weixin refund fail");
     }
-
-    /**
-     * 解析微信回调参数
-     *
-     * @param request
-     * @return
-     * @throws IOException
-     */
-    private String parseWeixinCallback(HttpServletRequest request) throws IOException {
-        // 获取微信调用我们notify_url的返回信息
-        String result = "";
-        InputStream inStream = request.getInputStream();
-        ByteArrayOutputStream outSteam = new ByteArrayOutputStream();
-        try {
-            byte[] buffer = new byte[1024];
-            int len = 0;
-            while ((len = inStream.read(buffer)) != -1) {
-                outSteam.write(buffer, 0, len);
-            }
-            result = new String(outSteam.toByteArray(), Charsets.UTF_8.toString());
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (outSteam != null) {
-                    outSteam.close();
-                    outSteam = null; // help GC
-                }
-                if (inStream != null) {
-                    inStream.close();
-                    inStream = null;// help GC
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return result;
-    }
-
 }

@@ -49,4 +49,29 @@ public class ShopController {
         return JsonUtils.writeValueAsString(bacMap);
     }
 
+
+    // 获取商铺列表
+    @RequestMapping(value = "/getShopInfo", method = RequestMethod.POST)
+    @ResponseBody
+    // @Action --修改 为拦截器方式实现
+    public String query(@RequestParam("session") String session,
+                        @RequestParam("shop_id") Integer shopid) {
+        Map<String, Object> bacMap = new HashMap<>();
+        try {
+            ShopStation shop =  this.shopMapper.findShopInfo(shopid);
+            Map<String, Object> data = new HashMap<>();
+            data.put("shop", shop);
+            bacMap.put("data", data);
+            bacMap.put("code", 0);
+            bacMap.put("msg", "成功");
+            // 根据openid检索数据库，不存在新建用户
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            bacMap.put("data", null);
+            bacMap.put("code", 0);
+            bacMap.put("msg", "失败");
+        }
+        return JsonUtils.writeValueAsString(bacMap);
+    }
+
 }

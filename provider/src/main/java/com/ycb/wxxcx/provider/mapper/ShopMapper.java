@@ -22,11 +22,11 @@ public interface ShopMapper {
             "And abs(ss.latitude - #{latitude}) < 50 " +
             "And abs(ss.longitude - #{longitude}) < 50 ")
     @Results({
-            @Result(property = "title", column = "ss.title"),
+            @Result(property = "name", column = "shop.name"),
             @Result(property = "address", column = "ss.address"),
             @Result(property = "latitude", column = "ss.latitude"),
             @Result(property = "longitude", column = "ss.longitude"),
-            @Result(property = "stationList", column = "station_id", many = @Many(select ="com.ycb.wxxcx.provider.mapper.ShopMapper.findStations"))
+            @Result(property = "shopStation", column = "station_id", many = @Many(select ="com.ycb.wxxcx.provider.mapper.ShopMapper.findStations"))
     })
     List<ShopStation> findShops(@Param("latitude") String latitude, @Param("longitude") String longitude);
 
@@ -50,4 +50,20 @@ public interface ShopMapper {
     @Select("SELECT s.id,s.city FROM ycb_mcs_shop_station ss," +
             "ycb_mcs_shop s WHERE ss.shopid=s.id AND ss.station_id=#{sid}")
     Shop getShopInfoBySid(String sid);
+
+    @Select("Select * From ycb_mcs_shop shop, ycb_mcs_shop_station ss, ycb_mcs_station s " +
+            "Where ss.shopid = shop.id And ss.station_id = s.id "+
+            "AND shop.id = #{shopid}")
+    @Results({
+            @Result(property = "name", column = "shop.name"),
+            @Result(property = "address", column = "ss.address"),
+            @Result(property = "latitude", column = "ss.latitude"),
+            @Result(property = "longitude", column = "ss.longitude"),
+            @Result(property = "cost", column = "shop.cost"),
+            @Result(property = "phone", column = "shop.phone"),
+            @Result(property = "stime", column = "shop.stime"),
+            @Result(property = "etime", column = "shop.etime"),
+            @Result(property = "shopStation", column = "station_id", many = @Many(select ="com.ycb.wxxcx.provider.mapper.ShopMapper.findStations"))
+    })
+    ShopStation findShopInfo(@Param("shopid") Integer shopid);
 }

@@ -1,6 +1,5 @@
 package com.ycb.wxxcx.provider.controller;
 
-import com.google.common.base.Charsets;
 import com.ycb.wxxcx.provider.cache.RedisService;
 import com.ycb.wxxcx.provider.constant.GlobalConfig;
 import com.ycb.wxxcx.provider.mapper.*;
@@ -17,9 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Date;
@@ -209,11 +205,11 @@ public class PayController {
         return paramMap;
     }
 
-
     @RequestMapping(value = "/payNotify", method = {RequestMethod.GET, RequestMethod.POST})
+    @ResponseBody
     public String payNotify(HttpServletRequest request) {
         try {
-            String responseStr = parseWeixinCallback(request);
+            String responseStr = HttpRequest.parseWeixinCallback(request);
             Map<String, Object> map = XmlUtil.doXMLParse(responseStr);
             // 校验签名 防止数据泄漏导致出现“假通知”，造成资金损失
             if (!WXPayUtil.checkIsSignValidFromResponseString(responseStr, key)) {
@@ -229,21 +225,25 @@ public class PayController {
                 String outTradeNo = (String) map.get("out_trade_no");
                 String totlaFee = (String) map.get("total_fee");
                 Long paid = Long.valueOf(totlaFee);
-                //修改订单状态为1，已支付
-                Order order = new Order();
-                order.setLastModifiedBy("SYS:pay");
-                order.setLastModifiedDate(new Date());
-                order.setStatus(1);//订单状态改为1，已支付
-                order.setPaid(BigDecimal.valueOf(paid).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)); //已支付的费用 分转换元
-                order.setOrderid(outTradeNo);
-                orderMapper.updateOrderStatus(order);
-                Long customer = orderMapper.getCustomer(outTradeNo);
-                //更新用户账户信息，押金
-                userMapper.updateUserDeposit(BigDecimal.valueOf(paid).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP), customer);
-                //根据订单查询MAC和CABLE
-                Station station = stationMapper.getMacCableByOrderid(outTradeNo);
-                socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;MAC:" + station.getMac() + ";ORDERID:" + outTradeNo + ";COLORID:7;CABLE:" + station.getCable() + ";\r\n");
-                logger.info("ORDERID:" + outTradeNo + "支付成功！");
+                // 幂等性设计，根据订单号，判断订单状态是否是未支付状态，是继续，不是，则说明已经更新成功
+                Integer status = orderMapper.getOrderStatus(outTradeNo);
+                if (status == 0) {
+                    //修改订单状态为1，已支付
+                    Order order = new Order();
+                    order.setLastModifiedBy("SYS:pay");
+                    order.setLastModifiedDate(new Date());
+                    order.setStatus(1);//订单状态改为1，已支付
+                    order.setPaid(BigDecimal.valueOf(paid).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)); //已支付的费用 分转换元
+                    order.setOrderid(outTradeNo);
+                    orderMapper.updateOrderStatus(order);
+                    Long customer = orderMapper.getCustomer(outTradeNo);
+                    //更新用户账户信息，押金
+                    userMapper.updateUserDeposit(BigDecimal.valueOf(paid).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP), customer);
+                    //根据订单查询MAC和CABLE
+                    Station station = stationMapper.getMacCableByOrderid(outTradeNo);
+                    socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;MAC:" + station.getMac() + ";ORDERID:" + outTradeNo + ";COLORID:7;CABLE:" + station.getCable() + ";\r\n");
+                    logger.info("ORDERID:" + outTradeNo + "支付成功！");
+                }
                 // 告诉微信服务器，我收到信息了，不要在调用回调action了
                 return WXPayUtil.setXML("SUCCESS", "OK");
             }
@@ -254,41 +254,4 @@ public class PayController {
         return WXPayUtil.setXML("FAIL", "weixin pay fail");
     }
 
-    /**
-     * 解析微信回调参数
-     *
-     * @param request
-     * @return
-     * @throws IOException
-     */
-    private String parseWeixinCallback(HttpServletRequest request) throws IOException {
-        // 获取微信调用我们notify_url的返回信息
-        String result = "";
-        InputStream inStream = request.getInputStream();
-        ByteArrayOutputStream outSteam = new ByteArrayOutputStream();
-        try {
-            byte[] buffer = new byte[1024];
-            int len = 0;
-            while ((len = inStream.read(buffer)) != -1) {
-                outSteam.write(buffer, 0, len);
-            }
-            result = new String(outSteam.toByteArray(), Charsets.UTF_8.toString());
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (outSteam != null) {
-                    outSteam.close();
-                    outSteam = null; // help GC
-                }
-                if (inStream != null) {
-                    inStream.close();
-                    inStream = null;// help GC
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return result;
-    }
 }

@@ -5,10 +5,10 @@ import java.util.List;
 /**
  * Created by zhuhui on 17-7-28.
  */
-public class ShopStation extends BaseEntity{
+public class ShopStation extends BaseEntity {
 
     // 商铺站点名
-    private String tile;
+    private String name;
 
     // 地址
     private String address;
@@ -19,15 +19,30 @@ public class ShopStation extends BaseEntity{
     // 纬度
     private String latitude;
 
-    // 设备
-    private List<Station> stationList;
+    // 人均消费
+    private String cost;
 
-    public String getTile() {
-        return tile;
+    // 电话号码
+    private String phone;
+
+    // 开始营业时间
+    private String stime;
+
+    // 结束营业时间
+    private String etime;
+
+    // logo图片地址
+    private String logo;
+
+    // 设备
+    private List<Station> shopStation;
+
+    public String getName() {
+        return name;
     }
 
-    public void setTile(String tile) {
-        this.tile = tile;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getAddress() {
@@ -54,11 +69,51 @@ public class ShopStation extends BaseEntity{
         this.latitude = latitude;
     }
 
-    public List<Station> getStationList() {
-        return stationList;
+    public List<Station> getShopStation() {
+        return shopStation;
     }
 
-    public void setStationList(List<Station> stationList) {
-        this.stationList = stationList;
+    public void setShopStation(List<Station> shopStation) {
+        this.shopStation = shopStation;
+    }
+
+    public String getCost() {
+        return cost;
+    }
+
+    public void setCost(String cost) {
+        this.cost = cost;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getStime() {
+        return stime;
+    }
+
+    public void setStime(String stime) {
+        this.stime = stime;
+    }
+
+    public String getEtime() {
+        return etime;
+    }
+
+    public void setEtime(String etime) {
+        this.etime = etime;
+    }
+
+    public String getLogo() {
+        return logo;
+    }
+
+    public void setLogo(String logo) {
+        this.logo = logo;
     }
 }

@@ -1,5 +1,7 @@
 package com.ycb.wxxcx.provider.utils;
 
+import com.google.common.base.Charsets;
+import org.apache.catalina.servlet4preview.http.HttpServletRequest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Base64;
 
@@ -245,4 +247,42 @@ public class HttpRequest {
         return null;
     }
 
+
+    /**
+     * 解析微信回调参数
+     *
+     * @param request
+     * @return
+     * @throws IOException
+     */
+    public static String parseWeixinCallback(HttpServletRequest request) throws IOException {
+        // 获取微信调用我们notify_url的返回信息
+        String result = "";
+        InputStream inStream = request.getInputStream();
+        ByteArrayOutputStream outSteam = new ByteArrayOutputStream();
+        try {
+            byte[] buffer = new byte[1024];
+            int len = 0;
+            while ((len = inStream.read(buffer)) != -1) {
+                outSteam.write(buffer, 0, len);
+            }
+            result = new String(outSteam.toByteArray(), Charsets.UTF_8.toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (outSteam != null) {
+                    outSteam.close();
+                    outSteam = null; // help GC
+                }
+                if (inStream != null) {
+                    inStream.close();
+                    inStream = null;// help GC
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return result;
+    }
 }
