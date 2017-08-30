@@ -16,7 +16,7 @@ public class JsonUtils {
 
     public static String writeValueAsString(Object value) {
         try {
-            objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
+            objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
             return objectMapper.writeValueAsString(value);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);

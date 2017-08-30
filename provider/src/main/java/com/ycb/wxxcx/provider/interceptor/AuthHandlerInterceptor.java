@@ -22,7 +22,7 @@ public class AuthHandlerInterceptor extends HandlerInterceptorAdapter {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String session = request.getParameter("session");
-        if (StringUtils.isEmpty(redisService.getKeyValue(session))) {
+        if (StringUtils.isEmpty(session) || StringUtils.isEmpty(redisService.getKeyValue(session))) {
             // 如果session失效  直接返回错误code
             Map<String, Object> bacMap = new HashMap<>();
             bacMap.put("data", null);

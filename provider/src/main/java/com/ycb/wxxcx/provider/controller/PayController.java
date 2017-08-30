@@ -97,13 +97,10 @@ public class PayController {
                 String orderid = WXPayUtil.createOrderId();
                 createPreOrder(sid, cableType, user, orderid, 11);
                 //修改用户账户信息，余额，押金修正
-                BigDecimal useMoney = user.getUsablemoney();
-                if (useMoney.compareTo(BigDecimal.valueOf(100)) > 0) {
-                    useMoney = BigDecimal.valueOf(100);
-                }
                 userMapper.updateUserDepositUsable(defaultPay, user.getId());
                 Map<String, Object> data = new HashMap<>();
                 data.put("pay_type", 1);//1账户余额支付
+                data.put("orderid", orderid);
                 bacMap.put("data", data);
                 bacMap.put("code", 0);
                 bacMap.put("errcode", 0);
@@ -131,10 +128,9 @@ public class PayController {
                 payData.put("package", prePayMap.get("package"));
                 payData.put("signType", prePayMap.get("signType"));
                 payData.put("paySign", paySign);
-                //Map<String, Object> data = new HashMap<>();
-                bacMap.put("paytype", 0);//微信支付
+                bacMap.put("pay_type", 0);//微信支付
+                bacMap.put("orderid", paramMap.get("out_trade_no").toString());
                 bacMap.put("wxpay_params", payData);//微信支付
-                //bacMap.put("data", data);
                 bacMap.put("code", 0);
                 bacMap.put("errcode", 0);
                 bacMap.put("msg", "成功");

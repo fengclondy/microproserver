@@ -1,9 +1,9 @@
 package com.ycb.wxxcx.provider.service;
 
+import com.ycb.wxxcx.provider.cache.RedisService;
 import com.ycb.wxxcx.provider.constant.GlobalConfig;
 import com.ycb.wxxcx.provider.mapper.MessageMapper;
 import com.ycb.wxxcx.provider.mapper.RefundMapper;
-import com.ycb.wxxcx.provider.utils.AccessToken;
 import com.ycb.wxxcx.provider.utils.HttpRequest;
 import com.ycb.wxxcx.provider.utils.JsonUtils;
 import com.ycb.wxxcx.provider.vo.Message;
@@ -12,7 +12,9 @@ import com.ycb.wxxcx.provider.vo.WechatTemplateMsg;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.Date;
 import java.util.Map;
@@ -31,6 +33,36 @@ public class MessageService {
 
     @Autowired
     private RefundMapper refundMapper;
+
+    @Autowired
+    private RedisService redisService;
+
+    @Value("${appID}")
+    private String appID;
+
+    @Value("${appSecret}")
+    private String appSecret;
+
+    public String getAccessToken() throws Exception{
+        String ACCESS_TOKEN = redisService.getKeyValue("ACCESS_TOKEN");
+        if (StringUtils.isEmpty(ACCESS_TOKEN)) {
+            String param = "grant_type=client_credential&appid="+appID+"&secret="+appSecret;
+            try {
+                String tokenInfo = HttpRequest.sendGet(GlobalConfig.WX_ACCESS_TOKEN_URL, param);
+                Map<String, Object> tokenInfoMap = JsonUtils.readValue(tokenInfo);
+                String accessToken = (String) tokenInfoMap.get("access_token");
+                Integer expiresIn = (Integer) tokenInfoMap.get("expires_in");
+                // 将accessToken存入Redis,存放时间为7200秒
+                redisService.setKeyValueTimeout("ACCESS_TOKEN", accessToken, expiresIn);
+                return accessToken;
+            } catch (Exception e) {
+                logger.error(e.getMessage());
+                return null;
+            }
+        } else {
+            return ACCESS_TOKEN;
+        }
+    }
 
     //获取form_id
     public Message getFormIdByOpenid(String openid){
@@ -109,8 +141,7 @@ public class MessageService {
 
         //发送请求
         try {
-            AccessToken accessToken = new AccessToken();
-            String token = accessToken.getAccessToken();
+            String token = this.getAccessToken();
             String msgUrl = GlobalConfig.WX_SEND_TEMPLATE_MESSAGE+"send?access_token="+token;
 
             String msgResult = HttpRequest.sendPost(msgUrl,data);  //发送post请求
@@ -138,7 +169,7 @@ public class MessageService {
         WechatTemplateMsg wechatTemplateMsg = new WechatTemplateMsg();
         wechatTemplateMsg.setTemplate_id(templateid);
         wechatTemplateMsg.setTouser(openid);
-        wechatTemplateMsg.setPage("index.jsp"); //跳转页面
+        wechatTemplateMsg.setPage("/pages/user/user"); //跳转页面
         wechatTemplateMsg.setForm_id(message.getFormId());
 
         TreeMap<String,TreeMap<String,String>> params = new TreeMap<String,TreeMap<String,String>>();
@@ -151,9 +182,8 @@ public class MessageService {
 
         //发送请求
         try {
-            AccessToken accessToken = new AccessToken();
-            String token = accessToken.getAccessToken();
-            String msgUrl = GlobalConfig.WX_SEND_TEMPLATE_MESSAGE+"send?access_token="+token;
+            String token = this.getAccessToken();
+            String msgUrl = GlobalConfig.WX_SEND_TEMPLATE_MESSAGE+"?access_token="+token;
 
             String msgResult = HttpRequest.sendPost(msgUrl,data);  //发送post请求
             Map<String, Object> msgResultMap = JsonUtils.readValue(msgResult);

@@ -30,6 +30,8 @@ public class TradeLog {
     private BigDecimal usefee;
     //用来接从数据库查出来的时长
     private Long duration;
+    //收费策略
+    private FeeStrategy feeStrategy;
 
     public String getOrderid() {
         return orderid;
@@ -98,11 +100,11 @@ public class TradeLog {
         this.lastTime = lastTime;
     }
 
-    public BigDecimal getUsefee() {
+    public BigDecimal getUseFee() {
         return usefee;
     }
 
-    public void setUsefee(BigDecimal usefee) {
+    public void setUseFee(BigDecimal usefee) {
         this.usefee = usefee;
     }
 
@@ -112,5 +114,13 @@ public class TradeLog {
 
     public void setDuration(Long duration) {
         this.duration = duration;
+    }
+
+    public FeeStrategy getFeeStrategy() {
+        return feeStrategy;
+    }
+
+    public void setFeeStrategy(FeeStrategy feeStrategy) {
+        this.feeStrategy = feeStrategy;
     }
 }

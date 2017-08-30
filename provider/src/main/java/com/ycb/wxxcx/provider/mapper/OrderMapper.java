@@ -14,22 +14,25 @@ import java.util.List;
 public interface OrderMapper {
 
     //通過用戶id查詢交易记录
-    @Select("SELECT t.orderid,t.status,t.borrow_station_name,t.borrow_time,1, " +
-            "t.return_station_name,t.return_time,t.usefee,(UNIX_TIMESTAMP(t.return_time) - UNIX_TIMESTAMP(t.borrow_time)) duration " +
+    @Select("SELECT *,(UNIX_TIMESTAMP(t.return_time) - UNIX_TIMESTAMP(t.borrow_time)) duration " +
             "FROM ycb_mcs_tradelog t " +
+            "LEFT JOIN ycb_mcs_shop_station ss " +
+            "ON t.borrow_shop_station_id = ss.id " +
+            "LEFT JOIN ycb_mcs_fee_strategy f " +
+            "ON ss.fee_settings = f.id " +
             "WHERE t.customer = #{customer} " +
-            "AND status <> 0 " +
+            "AND t.status <> 0 " +
             "ORDER BY t.id DESC LIMIT 0,20")
     @Results(id = "station", value = {
             @Result(property = "orderid", column = "orderid"),
             @Result(property = "status", column = "status"),
             @Result(property = "borrowName", column = "borrow_station_name"),
             @Result(property = "borrowTime", column = "borrow_time"),
-            @Result(property = "feeStr", column = "1"), //目前没用，随便定义的
             @Result(property = "returnName", column = "return_station_name"),
             @Result(property = "returnTime", column = "return_time"),
             @Result(property = "usefee", column = "usefee"),
-            @Result(property = "duration", column = "duration")
+            @Result(property = "duration", column = "duration"),
+            @Result(property = "feeStrategy", column = "fee_settings", one = @One(select = "com.ycb.wxxcx.provider.mapper.FeeStrategyMapper.findFeeStrategy"))
     })
     List<TradeLog> findTradeLogs(Long customer);
 
@@ -67,4 +70,12 @@ public interface OrderMapper {
     @Select("SELECT status " +
             "FROM ycb_mcs_tradelog where orderid = #{orderid}")
     Integer getOrderStatus(String outTradeNo);
+
+    @Select("SELECT case when count(*) > 0 then 1 else 0 end result from ycb_mcs_tradelog " +
+            "WHERE borrow_station_id = #{stationid} " +
+            "AND customer = #{customer} " +
+            "AND status >1 " +
+            "AND status <5 " +
+            "AND borrow_time > DATE_FORMAT(CURDATE(),'%Y-%m-%d %H:%i:%s') ")
+    Boolean findTodayOrder(@Param("stationid") Long stationid, @Param("customer") Long customer);
 }

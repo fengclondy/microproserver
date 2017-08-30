@@ -96,9 +96,7 @@ public class RefundController {
     @RequestMapping(value = "/doRefund", method = RequestMethod.POST)
     @ResponseBody
     public String wechatRefund(@RequestParam("session") String session) throws UnsupportedEncodingException {
-
         Map<String, Object> bacMap = new HashMap<>();
-
         if (StringUtils.isEmpty(session)) {
             bacMap.put("code", 1000);
             bacMap.put("msg", "失败(session不可为空)");

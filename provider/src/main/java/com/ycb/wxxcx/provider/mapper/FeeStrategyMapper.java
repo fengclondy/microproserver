@@ -1,25 +1,16 @@
 package com.ycb.wxxcx.provider.mapper;
 
 import com.ycb.wxxcx.provider.vo.FeeStrategy;
-import com.ycb.wxxcx.provider.vo.ShopStation;
 import org.apache.ibatis.annotations.*;
 
 /**
- * Created by duxinyuan on 17-7-26.
+ * Created by zhuhui on 17-8-28.
  */
 @Mapper
-public interface ShopStationMapper {
-
-    @Select("Select id from ycb_mcs_shop_station ss WHERE ss.station_id =#{sid}")
-    ShopStation findShopStationIdBySid(String sid);
-
-    //通過用戶id查詢交易记录
-    @Select("SELECT f.* " +
-            "FROM ycb_mcs_shop_station ss " +
-            "LEFT JOIN ycb_mcs_fee_strategy f " +
-            "ON ss.fee_settings = f.id " +
-            "WHERE ss.station_id = #{stationid} ")
-    @Results(value = {
+public interface FeeStrategyMapper {
+    @Select("Select * From ycb_mcs_fee_strategy " +
+            "Where id = #{id}")
+    @Results({
             @Result(property = "name", column = "name"),
             @Result(property = "freeTime", column = "free_time"),
             @Result(property = "freeUnit", column = "free_unit"),
@@ -32,5 +23,5 @@ public interface ShopStationMapper {
             @Result(property = "maxFeeUnit", column = "max_fee_unit"),
             @Result(property = "maxFee", column = "max_fee")
     })
-    FeeStrategy findFeeStrategyByStation(Long stationid);
+    FeeStrategy findFeeStrategy(@Param("id") Long id);
 }

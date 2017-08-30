@@ -34,6 +34,9 @@ public class ShopStation extends BaseEntity {
     // logo图片地址
     private String logo;
 
+    //收费策略
+    private FeeStrategy feeStrategy;
+
     // 设备
     private List<Station> shopStation;
 
@@ -115,5 +118,13 @@ public class ShopStation extends BaseEntity {
 
     public void setLogo(String logo) {
         this.logo = logo;
+    }
+
+    public FeeStrategy getFeeStrategy() {
+        return feeStrategy;
+    }
+
+    public void setFeeStrategy(FeeStrategy feeStrategy) {
+        this.feeStrategy = feeStrategy;
     }
 }

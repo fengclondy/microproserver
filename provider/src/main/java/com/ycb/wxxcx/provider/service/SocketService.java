@@ -15,7 +15,6 @@ import java.net.Socket;
 @Service
 public class SocketService {
 
-
     public static final Logger logger = LoggerFactory.getLogger(SocketService.class);
 
     @Value("${socketIp}")

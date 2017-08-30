@@ -31,7 +31,7 @@ public class TimeUtil {
             diff = duration;
         }
         try {
-            if (null != diff || 0 != diff.longValue()){
+            if (null != diff || 0 != diff.longValue()) {
                 Long days = diff / (60 * 60 * 24);   //天
                 Long hours = (diff - days * (60 * 60 * 24)) / (60 * 60);  //小时
                 Long minutes = (diff - days * (60 * 60 * 24) - hours * (60 * 60)) / 60; //分
@@ -49,7 +49,7 @@ public class TimeUtil {
                     lastTime = "" + ss + "秒";
                     return lastTime;
                 }
-            }else {
+            } else {
                 return "";
             }
 
@@ -60,4 +60,23 @@ public class TimeUtil {
         return "";
     }
 
+    /**
+     * 获取费用设置的时间单位
+     *
+     * @param maxFeeUnit
+     * @return
+     */
+    public static String getUnitString(Long maxFeeUnit) {
+        String unit = "";
+        if (maxFeeUnit.equals(1l)) {
+            unit = "秒";
+        } else if (maxFeeUnit.equals(60l)) {
+            unit = "分钟";
+        } else if (maxFeeUnit.equals(3600l)) {
+            unit = "小时";
+        } else if (maxFeeUnit.equals(86400l)) {
+            unit = "天";
+        }
+        return unit;
+    }
 }

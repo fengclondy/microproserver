@@ -1,9 +1,13 @@
 package com.ycb.wxxcx.provider.controller;
 
 import com.ycb.wxxcx.provider.cache.RedisService;
+import com.ycb.wxxcx.provider.mapper.OrderMapper;
+import com.ycb.wxxcx.provider.mapper.ShopStationMapper;
 import com.ycb.wxxcx.provider.mapper.StationMapper;
 import com.ycb.wxxcx.provider.mapper.UserMapper;
+import com.ycb.wxxcx.provider.service.FeeStrategyService;
 import com.ycb.wxxcx.provider.utils.JsonUtils;
+import com.ycb.wxxcx.provider.vo.FeeStrategy;
 import com.ycb.wxxcx.provider.vo.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +23,7 @@ import java.util.Map;
  * Created by zhuhui on 17-8-7.
  */
 @RestController
-@RequestMapping("borrow")
+    @RequestMapping("borrow")
 public class BorrowController {
 
     public static final Logger logger = LoggerFactory.getLogger(BorrowController.class);
@@ -28,10 +32,19 @@ public class BorrowController {
     private RedisService redisService;
 
     @Autowired
+    private FeeStrategyService feeStrategyService;
+
+    @Autowired
     private StationMapper stationMapper;
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private ShopStationMapper shopStationMapper;
+
+    @Autowired
+    private OrderMapper orderMapper;
 
     @Value("${defaultPay}")
     private BigDecimal defaultPay;
@@ -45,7 +58,9 @@ public class BorrowController {
         String sid = urlArr[urlArr.length - 1];
         String cable_type = stationMapper.getUsableBatteries(Long.valueOf(sid));
         User user = this.userMapper.findUserinfoByOpenid(redisService.getKeyValue(session));
-
+        FeeStrategy feeStrategy = shopStationMapper.findFeeStrategyByStation(Long.valueOf(sid));
+        String feeStr = feeStrategyService.transFeeStrategy(feeStrategy);
+        Boolean exitOrder =  orderMapper.findTodayOrder(Long.valueOf(sid),user.getId());
         Map<String, Object> bacMap = new HashMap<>();
         try {
             Map<String, Object> data = new HashMap<>();
@@ -54,8 +69,8 @@ public class BorrowController {
             data.put("need_pay", defaultPay.subtract(user.getUsablemoney()));//用户需支付金额
             data.put("deposite_need", defaultPay.subtract(user.getUsablemoney()));//所需押金
             data.put("usable_money", user.getUsablemoney());//用户可用金额
-            data.put("fee_strategy", "1小时免费时长，超出后每小时收费1元。每天最高收费10元。");//收费策略 TODO
-            data.put("fee_display", true);
+            data.put("fee_strategy", feeStr);//收费策略
+            data.put("free_display", !exitOrder);// 显示免费
             data.put("cable_type", JsonUtils.readValue(cable_type));
             bacMap.put("data", data);
             bacMap.put("code", 0);

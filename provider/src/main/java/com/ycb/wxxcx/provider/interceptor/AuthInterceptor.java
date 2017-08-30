@@ -18,7 +18,16 @@ public class AuthInterceptor extends WebMvcConfigurerAdapter {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(authHandlerInterceptor())
+                .addPathPatterns("/borrow/getMachineInfo")
+                .addPathPatterns("/formid/submitFormId")
+                .addPathPatterns("/order/getOrderList")
+                .addPathPatterns("/order/getOrderStatus")
+                .addPathPatterns("/wxpay/payment")
+                .addPathPatterns("/refund/getRefundList")
+                .addPathPatterns("/refund/doRefund")
                 .addPathPatterns("/shop/getShopList")
+                .addPathPatterns("/shop/getShopInfo")
+                .addPathPatterns("/user/userInfo")
                 .excludePathPatterns("/user/login");
         // super.addInterceptors(registry);
     }
