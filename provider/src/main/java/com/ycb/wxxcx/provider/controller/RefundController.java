@@ -175,7 +175,7 @@ public class RefundController {
 
                             //todo 推送退款成功消息
                             //Message message = this.messageService.getFormIdByOpenid(openid); //获取form_id
-                            Message message = this.messageService.getPrepayId(orderList.get(i).getOrderid()); //获取form_id
+                            Message message = this.messageService.getPrepayId(orderList.get(i).getOrderid()); //获取prepay_id
                             if (null !=message){
                                 this.messageService.refundSendTemplate(openid,wxRefundTemplateId,message,newRefund.getId());
                             }else {
