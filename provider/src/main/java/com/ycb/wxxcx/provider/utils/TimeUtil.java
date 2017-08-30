@@ -1,5 +1,7 @@
 package com.ycb.wxxcx.provider.utils;
 
+import org.springframework.util.StringUtils;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -11,7 +13,10 @@ public class TimeUtil {
     public static String calLastTime(String returnTime, String borrowTime, Long duration) {
         Long diff = 0L;
         String lastTime = null;
-        if (null == returnTime || "" == returnTime) {
+        if (StringUtils.isEmpty(borrowTime)){
+            return "";
+        }
+        if (StringUtils.isEmpty(returnTime)) {
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");// 格式化时间
             String nowtime = df.format(new Date());// 将当前时间转换成字符串
             try {

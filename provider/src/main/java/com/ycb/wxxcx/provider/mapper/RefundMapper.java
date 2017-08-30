@@ -31,4 +31,7 @@ public interface RefundMapper {
 
     @Update("UPDATE ycb_mcs_refund_log SET lastModifiedBy=#{lastModifiedBy},lastModifiedDate=NOW(),detail=#{detail} WHERE id=#{id}")
     void updateRefundDetail(Refund refund);
+
+    @Select("SELECT * FROM ycb_mcs_refund_log WHERE id=#{id}")
+    Refund findRefundByRefundId(Long id);
 }

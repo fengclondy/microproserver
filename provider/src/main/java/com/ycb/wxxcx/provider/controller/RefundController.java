@@ -5,7 +5,9 @@ import com.ycb.wxxcx.provider.constant.GlobalConfig;
 import com.ycb.wxxcx.provider.mapper.OrderMapper;
 import com.ycb.wxxcx.provider.mapper.RefundMapper;
 import com.ycb.wxxcx.provider.mapper.UserMapper;
+import com.ycb.wxxcx.provider.service.MessageService;
 import com.ycb.wxxcx.provider.utils.*;
+import com.ycb.wxxcx.provider.vo.Message;
 import com.ycb.wxxcx.provider.vo.Order;
 import com.ycb.wxxcx.provider.vo.Refund;
 import com.ycb.wxxcx.provider.vo.User;
@@ -42,6 +44,9 @@ public class RefundController {
 
     @Autowired(required = false)
     private OrderMapper orderMapper;
+
+    @Autowired
+    private MessageService messageService;
 
     @Value("${appID}")
     private String appID;
@@ -118,8 +123,8 @@ public class RefundController {
             bacMap.put("errmsg", "查询失败,没有可退款的订单)");
             return JsonUtils.writeValueAsString(bacMap);
         } else {
-            Refund newRefund = null;
             for (int i = 0; i < orderList.size(); i++) {
+                Refund newRefund = null;
                 //创建退款记录
                 Refund refund = new Refund();
                 BigDecimal refundMoney = (orderList.get(i).getPaid()).subtract(orderList.get(i).getUsefee());//退款金额
@@ -180,6 +185,15 @@ public class RefundController {
                             order.setStatus(4);
                             order.setRefunded(refundMoney);  //更新已退款至账户的金额
                             this.orderMapper.updateOrderStatusToFour(order);
+
+                            //todo 推送退款成功消息
+                            Message message = this.messageService.getFormIdByOpenid(openid); //获取form_id
+                            if (null !=message){
+                                this.messageService.refundSendTemplate(openid,GlobalConfig.REFUND_TEMPLATE_ID,message,newRefund.getId());
+                            }else {
+                                logger.info("orderId:" + orderList.get(i).getOrderid() + "退款消息推送失败！");
+                            }
+
                             bacMap.put("code", 0);
                             bacMap.put("msg", "退款成功");
                             bacMap.put("errcode", 0);
@@ -232,7 +246,7 @@ public class RefundController {
                 String nonce_str = (String) map.get("nonce_str");//随机字符串
                 String req_info = (String) map.get("req_info"); //加密信息
 
-                //用户KEY做MD5后的值
+                //解密数据
                 Map<String, Object> refundMap = HttpRequest.getRefundInfo(req_info,key);
 
                 String outTradeNo = (String) refundMap.get("out_trade_no");
@@ -240,6 +254,12 @@ public class RefundController {
                 String refundStatus = (String) refundMap.get("refund_status");
 
                 Long refundId = Long.valueOf(outRefundNo);
+                Refund ref = this.refundMapper.findRefundByRefundId(refundId);
+                if (null == ref){
+                    // 数据库里没有这条退款记录 有可能是深圳那边的数据
+                    return WXPayUtil.setXML("SUCCESS", "OK");
+                }
+
                 Refund refund = new Refund();
                 refund.setId(refundId);
                 refund.setLastModifiedBy("SYS:refund");
@@ -248,6 +268,7 @@ public class RefundController {
                     //微信那边退款成功  更新状态和到账时间
                     refund.setStatus(2);//退款成功
                     this.refundMapper.updateStatus(refund);
+
                     logger.info("REFUNDID:" + outRefundNo + "退款到账成功！");
 
                 }else if ("CHANGE".equalsIgnoreCase(refundStatus.toString())){

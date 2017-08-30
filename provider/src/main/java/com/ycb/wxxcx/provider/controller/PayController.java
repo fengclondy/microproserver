@@ -3,11 +3,9 @@ package com.ycb.wxxcx.provider.controller;
 import com.ycb.wxxcx.provider.cache.RedisService;
 import com.ycb.wxxcx.provider.constant.GlobalConfig;
 import com.ycb.wxxcx.provider.mapper.*;
+import com.ycb.wxxcx.provider.service.MessageService;
 import com.ycb.wxxcx.provider.service.SocketService;
-import com.ycb.wxxcx.provider.utils.HttpRequest;
-import com.ycb.wxxcx.provider.utils.JsonUtils;
-import com.ycb.wxxcx.provider.utils.WXPayUtil;
-import com.ycb.wxxcx.provider.utils.XmlUtil;
+import com.ycb.wxxcx.provider.utils.*;
 import com.ycb.wxxcx.provider.vo.*;
 import org.apache.catalina.servlet4preview.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -18,10 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by zhuhui on 17-8-7.
@@ -52,6 +47,12 @@ public class PayController {
 
     @Autowired
     private ShopMapper shopMapper;
+
+    @Autowired
+    private MessageMapper messageMapper;
+
+    @Autowired
+    private MessageService messageService;
 
     @Value("${appID}")
     private String appID;
@@ -113,7 +114,8 @@ public class PayController {
                 Map<String, Object> prePayMap = new LinkedHashMap<>();
                 prePayMap.put("appId", WXPayUtil.getAppId(preOrderInfo));
                 prePayMap.put("nonceStr", WXPayUtil.getNonceStr(preOrderInfo));
-                prePayMap.put("package", "prepay_id=" + WXPayUtil.getPrepayId(preOrderInfo));
+                String prepayId = WXPayUtil.getPrepayId(preOrderInfo);
+                prePayMap.put("package", "prepay_id=" + prepayId);
                 prePayMap.put("signType", "MD5");
                 prePayMap.put("timeStamp", String.valueOf(System.currentTimeMillis()));
                 String paySign = WXPayUtil.getSign(prePayMap, key);
@@ -130,6 +132,16 @@ public class PayController {
                 bacMap.put("code", 0);
                 bacMap.put("errcode", 0);
                 bacMap.put("msg", "成功");
+
+                //保存prepay_id
+                Message message = new Message();
+                message.setCreatedBy("SYS:message");
+                message.setOpenid(openid);
+                message.setPrepayId(prepayId);
+                message.setOrderid(paramMap.get("out_trade_no").toString());
+                message.setType(2);//prepay_id
+                message.setNumber(3);//初始化使用次数
+                this.messageMapper.insertPrepayIdMessage(message);
             }
         } catch (Exception e) {
             logger.error(e.getMessage());
@@ -224,6 +236,7 @@ public class PayController {
                 //获取应用服务器需要的数据进行持久化操作
                 String outTradeNo = (String) map.get("out_trade_no");
                 String totlaFee = (String) map.get("total_fee");
+                String openid = (String) map.get("openid");
                 Long paid = Long.valueOf(totlaFee);
                 // 幂等性设计，根据订单号，判断订单状态是否是未支付状态，是继续，不是，则说明已经更新成功
                 Integer status = orderMapper.getOrderStatus(outTradeNo);
@@ -242,7 +255,13 @@ public class PayController {
                     //根据订单查询MAC和CABLE
                     Station station = stationMapper.getMacCableByOrderid(outTradeNo);
                     socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;STATIONID:" + station.getId() + ";MAC:" + station.getMac() + ";ORDERID:" + outTradeNo + ";COLORID:7;CABLE:" + station.getCable() + ";\r\n");
-                    logger.info("ORDERID:" + outTradeNo + "支付成功！");
+
+                    //TODO 推送支付成功消息
+//                    Message message = this.messageMapper.findPrepayIdByOrderid(outTradeNo);
+//                    //判断
+//                    messageService.sendTemplate(openid,GlobalConfig.PAY_TEMPLATE_ID,message.getPrepayId(),outTradeNo);
+
+                     logger.info("ORDERID:" + outTradeNo + "支付成功！");
                 }
                 // 告诉微信服务器，我收到信息了，不要在调用回调action了
                 return WXPayUtil.setXML("SUCCESS", "OK");
@@ -253,5 +272,4 @@ public class PayController {
         }
         return WXPayUtil.setXML("FAIL", "weixin pay fail");
     }
-
 }
