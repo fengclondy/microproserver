@@ -33,7 +33,7 @@ public interface MessageMapper {
     @Delete("DELETE FROM ycb_mcs_message WHERE id=#{id}")
     void deleteMessageById(Long id);
 
-    @Select("SELECT m.id,m.openid,m.createdDate,m.form_prepay_id formId FROM ycb_mcs_message m WHERE m.openid=#{openid} order by m.createdDate limit 1")
+    @Select("SELECT m.id,m.openid,m.createdDate,m.form_prepay_id formId FROM ycb_mcs_message m WHERE m.openid=#{openid} AND m.form_prepay_id<>'the formId is a mock one' order by m.createdDate limit 1")
     Message findPrepayIdByOpenid(String openid);
 
 }
