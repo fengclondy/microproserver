@@ -1,10 +1,7 @@
 package com.ycb.wxxcx.provider.mapper;
 
 import com.ycb.wxxcx.provider.vo.Message;
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.*;
 
 /**
  * Created by duxinyuan on 2017/8/28.
@@ -36,4 +33,6 @@ public interface MessageMapper {
     @Select("SELECT m.id,m.openid,m.createdDate,m.form_prepay_id formId FROM ycb_mcs_message m WHERE m.openid=#{openid} AND m.form_prepay_id<>'the formId is a mock one' order by m.createdDate limit 1")
     Message findPrepayIdByOpenid(String openid);
 
+    @Update("UPDATE ycb_mcs_message SET lastModifiedBy=#{lastModifiedBy},lastModifiedDate=NOW(),number=number-1 WHERE id = #{id}")
+    void updateMessageNumberById(Message message);
 }
