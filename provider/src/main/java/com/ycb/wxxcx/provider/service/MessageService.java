@@ -170,7 +170,8 @@ public class MessageService {
         wechatTemplateMsg.setTemplate_id(templateid);
         wechatTemplateMsg.setTouser(openid);
         wechatTemplateMsg.setPage("/pages/user/user"); //跳转页面
-        wechatTemplateMsg.setForm_id(message.getFormId());
+        //wechatTemplateMsg.setForm_id(message.getFormId());
+        wechatTemplateMsg.setForm_id(message.getPrepayId());
 
         TreeMap<String,TreeMap<String,String>> params = new TreeMap<String,TreeMap<String,String>>();
         params.put("keyword1",WechatTemplateMsg.item(refund.getRefund().toString(), "#000000")); //提现金额
@@ -195,8 +196,15 @@ public class MessageService {
                 logger.info("模板消息发送失败errorCode:{"+errcode+"},errmsg:{"+errmsg+"}");
             }
             //删除form_id
-            this.messageMapper.deleteMessageById(message.getId());
+            //this.messageMapper.deleteMessageById(message.getId());
 
+            //减掉prepay_id的使用次数，如果为0 直接删除
+            if (1 >= message.getNumber()){
+                this.messageMapper.deleteMessageById(message.getId());
+            }else {
+                message.setLastModifiedBy("SYS:message");
+                this.messageMapper.updateMessageNumberById(message);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

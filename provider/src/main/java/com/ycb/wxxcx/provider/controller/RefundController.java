@@ -12,7 +12,6 @@ import com.ycb.wxxcx.provider.vo.Order;
 import com.ycb.wxxcx.provider.vo.Refund;
 import com.ycb.wxxcx.provider.vo.User;
 import org.apache.catalina.servlet4preview.http.HttpServletRequest;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,12 +67,6 @@ public class RefundController {
     @ResponseBody
     public String query(@RequestParam("session") String session) {
         Map<String, Object> bacMap = new HashMap<>();
-        if (StringUtils.isEmpty(session)) {
-            bacMap.put("data", null);
-            bacMap.put("code", 2);
-            bacMap.put("msg", "失败(session不可为空)");
-            return JsonUtils.writeValueAsString(bacMap);
-        }
         try {
             String openid = redisService.getKeyValue(session);
             User user = this.userMapper.findUserinfoByOpenid(openid);
@@ -96,15 +89,8 @@ public class RefundController {
     @RequestMapping(value = "/doRefund", method = RequestMethod.POST)
     @ResponseBody
     public String wechatRefund(@RequestParam("session") String session) throws UnsupportedEncodingException {
-        Map<String, Object> bacMap = new HashMap<>();
-        if (StringUtils.isEmpty(session)) {
-            bacMap.put("code", 1000);
-            bacMap.put("msg", "失败(session不可为空)");
-            bacMap.put("errcode", 1000);
-            bacMap.put("errmsg", "失败(session不可为空)");
-            return JsonUtils.writeValueAsString(bacMap);
-        }
 
+        Map<String, Object> bacMap = new HashMap<>();
         String openid = redisService.getKeyValue(session);
         User user = this.userMapper.findUserMoneyByOpenid(openid);//查询用户可用余额
         if (user.getUsablemoney() == BigDecimal.ZERO) {
@@ -188,7 +174,8 @@ public class RefundController {
                             this.orderMapper.updateOrderStatusToFour(order);
 
                             //todo 推送退款成功消息
-                            Message message = this.messageService.getFormIdByOpenid(openid); //获取form_id
+                            //Message message = this.messageService.getFormIdByOpenid(openid); //获取form_id
+                            Message message = this.messageService.getPrepayId(orderList.get(i).getOrderid()); //获取prepay_id
                             if (null !=message){
                                 this.messageService.refundSendTemplate(openid,wxRefundTemplateId,message,newRefund.getId());
                             }else {
