@@ -35,7 +35,7 @@ public class AccessToken {
         if (StringUtils.isEmpty(ACCESS_TOKEN)) {
             String param = "grant_type=client_credential&appid="+appID+"&secret="+appSecret;
             try {
-                String tokenInfo = HttpRequest.sendGet(GlobalConfig.ACCESS_TOKEN_URL, param);
+                String tokenInfo = HttpRequest.sendGet(GlobalConfig.WX_ACCESS_TOKEN_URL, param);
                 Map<String, Object> tokenInfoMap = JsonUtils.readValue(tokenInfo);
                 String accessToken = (String) tokenInfoMap.get("access_token");
                 Integer expiresIn = (Integer) tokenInfoMap.get("expires_in");

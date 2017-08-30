@@ -257,9 +257,6 @@ public class PayController {
                     socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;STATIONID:" + station.getId() + ";MAC:" + station.getMac() + ";ORDERID:" + outTradeNo + ";COLORID:7;CABLE:" + station.getCable() + ";\r\n");
 
                     //TODO 推送支付成功消息
-//                    Message message = this.messageMapper.findPrepayIdByOrderid(outTradeNo);
-//                    //判断
-//                    messageService.sendTemplate(openid,GlobalConfig.PAY_TEMPLATE_ID,message.getPrepayId(),outTradeNo);
 
                      logger.info("ORDERID:" + outTradeNo + "支付成功！");
                 }

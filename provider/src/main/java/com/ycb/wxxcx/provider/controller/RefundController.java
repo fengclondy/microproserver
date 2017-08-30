@@ -60,6 +60,9 @@ public class RefundController {
     @Value("${key}")
     private String key;
 
+    @Value("${wxRefundTemplateId}")
+    private String wxRefundTemplateId;
+
     // 获取提现记录列表
     @RequestMapping(value = "/getRefundList", method = RequestMethod.POST)
     @ResponseBody
@@ -189,7 +192,7 @@ public class RefundController {
                             //todo 推送退款成功消息
                             Message message = this.messageService.getFormIdByOpenid(openid); //获取form_id
                             if (null !=message){
-                                this.messageService.refundSendTemplate(openid,GlobalConfig.REFUND_TEMPLATE_ID,message,newRefund.getId());
+                                this.messageService.refundSendTemplate(openid,wxRefundTemplateId,message,newRefund.getId());
                             }else {
                                 logger.info("orderId:" + orderList.get(i).getOrderid() + "退款消息推送失败！");
                             }

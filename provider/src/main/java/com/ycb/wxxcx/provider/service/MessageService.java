@@ -111,7 +111,7 @@ public class MessageService {
         try {
             AccessToken accessToken = new AccessToken();
             String token = accessToken.getAccessToken();
-            String msgUrl = GlobalConfig.SEND_TEMPLATE_MESSAGE+"send?access_token="+token;
+            String msgUrl = GlobalConfig.WX_SEND_TEMPLATE_MESSAGE+"send?access_token="+token;
 
             String msgResult = HttpRequest.sendPost(msgUrl,data);  //发送post请求
             Map<String, Object> msgResultMap = JsonUtils.readValue(msgResult);
@@ -153,7 +153,7 @@ public class MessageService {
         try {
             AccessToken accessToken = new AccessToken();
             String token = accessToken.getAccessToken();
-            String msgUrl = GlobalConfig.SEND_TEMPLATE_MESSAGE+"send?access_token="+token;
+            String msgUrl = GlobalConfig.WX_SEND_TEMPLATE_MESSAGE+"send?access_token="+token;
 
             String msgResult = HttpRequest.sendPost(msgUrl,data);  //发送post请求
             Map<String, Object> msgResultMap = JsonUtils.readValue(msgResult);
