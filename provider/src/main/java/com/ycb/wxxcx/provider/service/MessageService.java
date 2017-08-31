@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -43,10 +42,10 @@ public class MessageService {
     @Value("${appSecret}")
     private String appSecret;
 
-    public String getAccessToken() throws Exception {
+    public String getAccessToken() throws Exception{
         String ACCESS_TOKEN = redisService.getKeyValue("ACCESS_TOKEN");
         if (StringUtils.isEmpty(ACCESS_TOKEN)) {
-            String param = "grant_type=client_credential&appid=" + appID + "&secret=" + appSecret;
+            String param = "grant_type=client_credential&appid="+appID+"&secret="+appSecret;
             try {
                 String tokenInfo = HttpRequest.sendGet(GlobalConfig.WX_ACCESS_TOKEN_URL, param);
                 Map<String, Object> tokenInfoMap = JsonUtils.readValue(tokenInfo);
@@ -65,87 +64,16 @@ public class MessageService {
     }
 
     //获取form_id
-    public Message getFormIdByOpenid(String openid) {
+    public Message getFormIdByOpenid(String openid){
+
         //根据openid检索form_id
         Message message = this.messageMapper.findFormIdByOpenid(openid);
-        if (null != message) {
-            //判断时间是否过期
-            Date createdDate = message.getCreatedDate();
-            Date nowTime = new Date();
-            Long diff = (nowTime.getTime() - createdDate.getTime()) / 1000; //秒
-            if (diff < 60 * 60 * 24 * 7) {
-                return message;
-            } else {
-                //过期 从数据库删除
-                this.messageMapper.deleteMessageById(message.getId());
-            }
-        }
-        return null;
-    }
 
-    //获取prepay_id
-    public Message getPrepayIdByOrderid(String outTradeNo) {
-        //根据订单编号检索
-        Message message = this.messageMapper.findPrepayIdByOrderid(outTradeNo);
-        if (null != message) {
-            //判断时间是否过期
-            Date createdDate = message.getCreatedDate();
-            Date nowTime = new Date();
-            Long diff = (nowTime.getTime() - createdDate.getTime()) / 1000; //秒
-            if (diff < 60 * 60 * 24 * 7 && 0 < message.getNumber()) {
-                //未过期 &&可以使用
-                return message;
-            } else {
-                //过期 从数据库删除
-                this.messageMapper.deleteMessageById(message.getId());
-            }
-        }
-        return null;
-    }
-
-    //支付成功 推送消息
-    public void paySendTemplate(String openid, String templateid, String formid, String orderid) {
-
-        TreeMap<String, TreeMap<String, String>> params = new TreeMap<String, TreeMap<String, String>>();
-        //根据具体模板参数组装
-        WechatTemplateMsg wechatTemplateMsg = new WechatTemplateMsg();
-        wechatTemplateMsg.setTemplate_id(templateid);
-        wechatTemplateMsg.setTouser(openid);
-        wechatTemplateMsg.setPage("********");
-        wechatTemplateMsg.setForm_id(formid);
-
-        //todo 查询订单信息
-
-        params.put("keyword1", WechatTemplateMsg.item("8.1发现尼泊尔—人文与自然的旅行圣地", "#000000"));
-        params.put("keyword2", WechatTemplateMsg.item("2017.1.2", "#000000"));
-        params.put("keyword3", WechatTemplateMsg.item("订单编号***", "#000000"));
-        params.put("keyword4", WechatTemplateMsg.item("备注", "#000000"));
-
-        wechatTemplateMsg.setData(params);
-        String data = JsonUtils.writeValueAsString(wechatTemplateMsg);
-
-        //发送请求
-        try {
-            String token = this.getAccessToken();
-            String msgUrl = GlobalConfig.WX_SEND_TEMPLATE_MESSAGE + "send?access_token=" + token;
-
-            String msgResult = HttpRequest.sendPost(msgUrl, data);  //发送post请求
-            Map<String, Object> msgResultMap = JsonUtils.readValue(msgResult);
-            Integer errcode = (Integer) msgResultMap.get("errcode");
-            String errmsg = (String) msgResultMap.get("errmsg");
-            if (0 == errcode) {
-                //result = true;
-                logger.info("模板消息发送成功errorCode:{" + errcode + "},errmsg:{" + errmsg + "}");
-            } else {
-                logger.info("模板消息发送失败errorCode:{" + errcode + "},errmsg:{" + errmsg + "}");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        return message;
     }
 
     //提现成功 推送消息
-    public void refundSendTemplate(String openid, String templateid, Message message, Long refundId) {
+    public void refundSendTemplate(String openid, String templateid, Message message, Long refundId){
 
         //查询提现记录
         Refund refund = this.refundMapper.findRefundByRefundId(refundId);
@@ -158,10 +86,10 @@ public class MessageService {
         wechatTemplateMsg.setForm_id(message.getFormId());
 
         String requestTime = refund.getRequestTime();
-        TreeMap<String, TreeMap<String, String>> params = new TreeMap<String, TreeMap<String, String>>();
-        params.put("keyword1", WechatTemplateMsg.item(refund.getRefund().toString() + "元", "#000000")); //提现金额
-        params.put("keyword2", WechatTemplateMsg.item(requestTime.substring(0, requestTime.length() - 2), "#000000")); //提现时间
-        params.put("keyword3", WechatTemplateMsg.item("提现1～3个工作日到账金额", "#000000")); //温馨提示
+        TreeMap<String,TreeMap<String,String>> params = new TreeMap<String,TreeMap<String,String>>();
+        params.put("keyword1",WechatTemplateMsg.item(refund.getRefund().toString()+"元", "#000000")); //提现金额
+        params.put("keyword2",WechatTemplateMsg.item(requestTime.substring(0, requestTime.length() - 2), "#000000")); //提现时间
+        params.put("keyword3",WechatTemplateMsg.item("提现1～3个工作日到账金额", "#000000")); //温馨提示
         wechatTemplateMsg.setData(params);
 
         String data = JsonUtils.writeValueAsString(wechatTemplateMsg);
@@ -169,16 +97,28 @@ public class MessageService {
         //发送请求
         try {
             String token = this.getAccessToken();
-            String msgUrl = GlobalConfig.WX_SEND_TEMPLATE_MESSAGE + "?access_token=" + token;
+            String msgUrl = GlobalConfig.WX_SEND_TEMPLATE_MESSAGE+"?access_token="+token;
 
-            String msgResult = HttpRequest.sendPost(msgUrl, data);  //发送post请求
+            String msgResult = HttpRequest.sendPost(msgUrl,data);  //发送post请求
             Map<String, Object> msgResultMap = JsonUtils.readValue(msgResult);
-            Integer errcode = (Integer) msgResultMap.get("errcode");
-            String errmsg = (String) msgResultMap.get("errmsg");
-            if (0 == errcode) {
-                logger.info("模板消息发送成功errorCode:{" + errcode + "},errmsg:{" + errmsg + "}");
-            } else {
-                logger.info("模板消息发送失败errorCode:{" + errcode + "},errmsg:{" + errmsg + "}");
+            Integer errcode = (Integer)msgResultMap.get("errcode");
+            String errmsg = (String)msgResultMap.get("errmsg");
+            if(0 == errcode){
+                logger.info("模板消息发送成功errorCode:{"+errcode+"},errmsg:{"+errmsg+"}");
+            }else{
+                logger.info("模板消息发送失败errorCode:{"+errcode+"},errmsg:{"+errmsg+"}");
+            }
+
+            //如果此时的剩余使用次数为1 直接删除
+            if (message.getNumber() <= 1){
+                //清除本条数据
+                this.messageMapper.deleteMessageById(message.getId());
+                //清除该用户过期数据
+                this.messageMapper.deleteMessageByOpenid(openid);
+            }else {
+                //更新prepay_id的使用次数
+                message.setLastModifiedBy("SYS:message");
+                this.messageMapper.updateMessageNumberById(message);
             }
         } catch (Exception e) {
             e.printStackTrace();
