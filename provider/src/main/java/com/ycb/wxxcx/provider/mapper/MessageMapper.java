@@ -14,9 +14,6 @@ public interface MessageMapper {
             "VALUES(#{createdBy},NOW(),#{version},#{formId},#{openid},#{number},#{type})")
     void insertFormId(Message message);
 
-    @Select("SELECT m.id,m.openid,m.createdDate,m.form_prepay_id formId,m.number FROM ycb_mcs_message m WHERE m.orderid=#{outTradeNo} order by m.createdDate limit 1")
-    Message findPrepayIdByOrderid(String outTradeNo);
-
     @Insert("INSERT INTO ycb_mcs_message(createdBy,createdDate,optlock,form_prepay_id,openid,orderid,number,type) " +
             "VALUES(#{createdBy},NOW(),#{version},#{prepayId},#{openid},#{orderid},#{number},#{type})")
     void insertPrepayIdMessage(Message message);
