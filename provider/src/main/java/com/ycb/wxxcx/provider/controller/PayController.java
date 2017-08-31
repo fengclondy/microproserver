@@ -258,8 +258,6 @@ public class PayController {
                     Station station = stationMapper.getMacCableByOrderid(outTradeNo);
                     socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;STATIONID:" + station.getId() + ";MAC:" + station.getMac() + ";ORDERID:" + outTradeNo + ";COLORID:7;CABLE:" + station.getCable() + ";\r\n");
 
-                    //TODO 推送支付成功消息
-
                      logger.info("ORDERID:" + outTradeNo + "支付成功！");
                 }
                 // 告诉微信服务器，我收到信息了，不要在调用回调action了

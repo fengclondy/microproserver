@@ -28,10 +28,10 @@ public class FormIdController {
     @Autowired
     private MessageMapper messageMapper;
 
-    //上传form_id
+    //接收form_id接口
     @RequestMapping(value = "/submitFormId", method = RequestMethod.POST)
     @ResponseBody
-    public String query(@RequestParam("session") String session,
+    public String submitFormId(@RequestParam("session") String session,
                         @RequestParam("form_id") String formid) {
 
         Map<String, Object> bacMap = new HashMap<>();
@@ -49,8 +49,9 @@ public class FormIdController {
                 message.setOpenid(openid);
                 message.setFormId(formid);
                 message.setType(1); //form_id
+                message.setNumber(1);//使用次数初始化为1
                 message.setCreatedBy("SYS:message");
-                this.messageMapper.insertMessage(message);
+                this.messageMapper.insertFormId(message);
 
                 bacMap.put("form_id", formid);
                 bacMap.put("code", 0);
