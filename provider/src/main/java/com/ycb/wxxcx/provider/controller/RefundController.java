@@ -2,7 +2,6 @@ package com.ycb.wxxcx.provider.controller;
 
 import com.ycb.wxxcx.provider.cache.RedisService;
 import com.ycb.wxxcx.provider.constant.GlobalConfig;
-import com.ycb.wxxcx.provider.mapper.MessageMapper;
 import com.ycb.wxxcx.provider.mapper.OrderMapper;
 import com.ycb.wxxcx.provider.mapper.RefundMapper;
 import com.ycb.wxxcx.provider.mapper.UserMapper;
@@ -47,9 +46,6 @@ public class RefundController {
 
     @Autowired
     private MessageService messageService;
-
-    @Autowired
-    private MessageMapper messageMapper;
 
     @Value("${appID}")
     private String appID;
@@ -177,24 +173,10 @@ public class RefundController {
                             this.orderMapper.updateOrderStatusToFour(order);
 
                             //todo 推送退款成功消息
-                            Message megPrepay = this.messageService.getPrepayIdByOrderid(orderList.get(i).getOrderid()); //获取prepay_id
-                            Message megForm = this.messageService.getFormIdByOpenid(openid); //获取form_id
-
-                            if (null !=megPrepay){
-                                //使用prepay_id推送消息
-                                this.messageService.refundSendTemplate(openid,wxRefundTemplateId,megPrepay,newRefund.getId());
-                                //减掉prepay_id的使用次数，如果为0 直接删除
-                                if (1 >= megPrepay.getNumber()){
-                                    this.messageMapper.deleteMessageById(megPrepay.getId());
-                                }else {
-                                    megPrepay.setLastModifiedBy("SYS:message");
-                                    this.messageMapper.updateMessageNumberById(megPrepay);
-                                }
-                            }else if (null !=megForm){
+                            Message message = this.messageService.getFormIdByOpenid(openid); //获取form_id
+                            if (null !=message){
                                 //使用form_id推送消息
-                                this.messageService.refundSendTemplate(openid,wxRefundTemplateId,megForm,newRefund.getId());
-                                //删除form_id
-                                this.messageMapper.deleteMessageById(megForm.getId());
+                                this.messageService.refundSendTemplate(openid,wxRefundTemplateId,message,newRefund.getId());
                             }else {
                                 logger.info("orderId:" + orderList.get(i).getOrderid() + "该条退款消息推送失败！没有可用的form_id了");
                             }

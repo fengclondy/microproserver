@@ -69,22 +69,8 @@ public class MessageService {
 
         //根据openid检索form_id
         Message message = this.messageMapper.findFormIdByOpenid(openid);
-        if (null !=message){
-            //判断时间是否过期
-            Date createdDate = message.getCreatedDate();
-            Date nowTime = new Date();
-            Long diff = (nowTime.getTime() - createdDate.getTime()) / 1000; //秒
-            if (diff<60*60*24*7){
-                return message;
-            }else {
-                //过期 从数据库删除
-                this.messageMapper.deleteMessageById(message.getId());
-            }
-        }else {
-            //没有可用的form_id了
-            return null;
-        }
-        return null;
+
+        return message;
     }
 
     //获取prepay_id
@@ -193,6 +179,18 @@ public class MessageService {
                 logger.info("模板消息发送成功errorCode:{"+errcode+"},errmsg:{"+errmsg+"}");
             }else{
                 logger.info("模板消息发送失败errorCode:{"+errcode+"},errmsg:{"+errmsg+"}");
+            }
+
+            //如果此时的剩余使用次数为1 直接删除
+            if (message.getNumber() <= 1){
+                //清除本条数据
+                this.messageMapper.deleteMessageById(message.getId());
+                //清除该用户过期数据
+                this.messageMapper.deleteMessageByOpenid(openid);
+            }else {
+                //更新prepay_id的使用次数
+                message.setLastModifiedBy("SYS:message");
+                this.messageMapper.updateMessageNumberById(message);
             }
         } catch (Exception e) {
             e.printStackTrace();
