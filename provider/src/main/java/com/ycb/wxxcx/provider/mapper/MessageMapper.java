@@ -20,7 +20,7 @@ public interface MessageMapper {
 //    @Update("UPDATE ycb_mcs_message m SET m.prepay_id=#{prepayId},m.orderid=#{orderid} WHERE m.id=#{id}")
 //    void updateMessagePrepayIdByMid(Message message);
 
-    @Select("SELECT m.id,m.openid,m.createdDate,m.form_prepay_id prepayId,m.number FROM ycb_mcs_message m WHERE m.orderid=#{outTradeNo} order by m.createdDate limit 1")
+    @Select("SELECT m.id,m.openid,m.createdDate,m.form_prepay_id formId,m.number FROM ycb_mcs_message m WHERE m.orderid=#{outTradeNo} order by m.createdDate limit 1")
     Message findPrepayIdByOrderid(String outTradeNo);
 
     @Insert("INSERT INTO ycb_mcs_message(createdBy,createdDate,optlock,form_prepay_id,openid,orderid,number,type) " +
@@ -31,7 +31,7 @@ public interface MessageMapper {
     void deleteMessageById(Long id);
 
     @Select("SELECT m.id,m.openid,m.createdDate,m.form_prepay_id formId FROM ycb_mcs_message m WHERE m.openid=#{openid} AND m.form_prepay_id<>'the formId is a mock one' order by m.createdDate limit 1")
-    Message findPrepayIdByOpenid(String openid);
+    Message findFormIdByOpenid(String openid);
 
     @Update("UPDATE ycb_mcs_message SET lastModifiedBy=#{lastModifiedBy},lastModifiedDate=NOW(),number=number-1 WHERE id = #{id}")
     void updateMessageNumberById(Message message);

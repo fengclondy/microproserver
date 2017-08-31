@@ -68,7 +68,7 @@ public class MessageService {
     public Message getFormIdByOpenid(String openid){
 
         //根据openid检索form_id
-        Message message = this.messageMapper.findPrepayIdByOpenid(openid);
+        Message message = this.messageMapper.findFormIdByOpenid(openid);
         if (null !=message){
             //判断时间是否过期
             Date createdDate = message.getCreatedDate();
@@ -88,7 +88,7 @@ public class MessageService {
     }
 
     //获取prepay_id
-    public Message getPrepayId(String outTradeNo){
+    public Message getPrepayIdByOrderid(String outTradeNo){
 
         //根据订单编号检索
         Message message = this.messageMapper.findPrepayIdByOrderid(outTradeNo);
@@ -99,12 +99,11 @@ public class MessageService {
             Long diff = (nowTime.getTime() - createdDate.getTime()) / 1000; //秒
             if (diff<60*60*24*7){
                 //未过期 判断是否还可以使用
-               Integer i = message.getNumber();
-               if (0<i){
+               if (0<message.getNumber()){
                    //可以使用
                     return message;
                }else {
-                   //prepay_id已经使用够3次了 从数据库删除
+                   //prepay_id可用次数不足 从数据库删除
                    this.messageMapper.deleteMessageById(message.getId());
                }
             }else {
@@ -170,12 +169,12 @@ public class MessageService {
         wechatTemplateMsg.setTemplate_id(templateid);
         wechatTemplateMsg.setTouser(openid);
         wechatTemplateMsg.setPage("/pages/user/user"); //跳转页面
-        //wechatTemplateMsg.setForm_id(message.getFormId());
-        wechatTemplateMsg.setForm_id(message.getPrepayId());
+        wechatTemplateMsg.setForm_id(message.getFormId());
 
+        String requestTime = refund.getRequestTime();
         TreeMap<String,TreeMap<String,String>> params = new TreeMap<String,TreeMap<String,String>>();
-        params.put("keyword1",WechatTemplateMsg.item(refund.getRefund().toString(), "#000000")); //提现金额
-        params.put("keyword2",WechatTemplateMsg.item(refund.getRefundTime(), "#000000")); //提现时间
+        params.put("keyword1",WechatTemplateMsg.item(refund.getRefund().toString()+"元", "#000000")); //提现金额
+        params.put("keyword2",WechatTemplateMsg.item(requestTime.substring(0, requestTime.length() - 2), "#000000")); //提现时间
         params.put("keyword3",WechatTemplateMsg.item("提现1～3个工作日到账金额", "#000000")); //温馨提示
         wechatTemplateMsg.setData(params);
 
@@ -194,16 +193,6 @@ public class MessageService {
                 logger.info("模板消息发送成功errorCode:{"+errcode+"},errmsg:{"+errmsg+"}");
             }else{
                 logger.info("模板消息发送失败errorCode:{"+errcode+"},errmsg:{"+errmsg+"}");
-            }
-            //删除form_id
-            //this.messageMapper.deleteMessageById(message.getId());
-
-            //减掉prepay_id的使用次数，如果为0 直接删除
-            if (1 >= message.getNumber()){
-                this.messageMapper.deleteMessageById(message.getId());
-            }else {
-                message.setLastModifiedBy("SYS:message");
-                this.messageMapper.updateMessageNumberById(message);
             }
         } catch (Exception e) {
             e.printStackTrace();
