@@ -52,50 +52,65 @@ public class UserController {
         try {
             String getLoginInfo = HttpRequest.sendGet(GlobalConfig.WX_OPENID_URL, param);
             Map<String, Object> loginInfoMap = JsonUtils.readValue(getLoginInfo);
-            String sessinKey = (String) loginInfoMap.get("session_key");
-            String openid = (String) loginInfoMap.get("openid");
-            Integer expiresIn = (Integer) loginInfoMap.get("expires_in");
-
-            // 根据openid检索数据库，不存在新建用户
-            Integer optlock = this.userMapper.findByOpenid(openid);
-            if (optlock == null) {
-                User user = new User();
-                user.setOpenid(openid);
-                user.setDeposit(BigDecimal.ZERO);
-                user.setRefund(BigDecimal.ZERO);
-                user.setUsablemoney(BigDecimal.ZERO);
-                user.setRefunded(BigDecimal.ZERO);
-                user.setPlatform(3);
-                user.setCreatedBy("SYS:login");
-                user.setCreatedDate(new Date());
-                this.userMapper.insert(user);
-                Map<String, Object> userInfoMap = HttpRequest.getUserInfo(encryptedData,sessinKey,iv);
-                UserInfo userInfo = new UserInfo();
-                userInfo.setOpenid(openid);
-                userInfo.setNickname((String) userInfoMap.get("nickName"));
-                userInfo.setSex((Integer) userInfoMap.get("gender"));
-                userInfo.setLanguage((String) userInfoMap.get("language"));
-                userInfo.setCity((String) userInfoMap.get("city"));
-                userInfo.setProvince((String) userInfoMap.get("province"));
-                userInfo.setCountry((String) userInfoMap.get("country"));
-                userInfo.setHeadimgurl((String) userInfoMap.get("avatarUrl"));
-                userInfo.setUnionid((String) userInfoMap.get("unionId"));
-                userInfo.setCreatedBy("SYS:login");
-                userInfo.setCreatedDate(new Date());
-                this.userMapper.insertUserInfo(userInfo);
+            if (loginInfoMap.containsKey("errcode")) {
+                if (loginInfoMap.get("errcode").equals(40163)) {
+                    bacMap.put("data", null);
+                    bacMap.put("code", 3);
+                    bacMap.put("msg", "登录code不合法");
+                } else if (loginInfoMap.get("errcode").equals(40029)) {
+                    bacMap.put("data", null);
+                    bacMap.put("code", 3);
+                    bacMap.put("msg", "登录code不合法");
+                } else {
+                    bacMap.put("data", null);
+                    bacMap.put("code", 3);
+                    bacMap.put("msg", "登录code不合法");
+                }
             } else {
-                optlock++;
-                this.userMapper.update(optlock, new Date(), openid);
+                String sessinKey = (String) loginInfoMap.get("session_key");
+                String openid = (String) loginInfoMap.get("openid");
+                Integer expiresIn = (Integer) loginInfoMap.get("expires_in");
+                // 根据openid检索数据库，不存在新建用户
+                Integer optlock = this.userMapper.findByOpenid(openid);
+                if (optlock == null) {
+                    User user = new User();
+                    user.setOpenid(openid);
+                    user.setDeposit(BigDecimal.ZERO);
+                    user.setRefund(BigDecimal.ZERO);
+                    user.setUsablemoney(BigDecimal.ZERO);
+                    user.setRefunded(BigDecimal.ZERO);
+                    user.setPlatform(3);
+                    user.setCreatedBy("SYS:login");
+                    user.setCreatedDate(new Date());
+                    this.userMapper.insert(user);
+                    Map<String, Object> userInfoMap = HttpRequest.getUserInfo(encryptedData, sessinKey, iv);
+                    UserInfo userInfo = new UserInfo();
+                    userInfo.setOpenid(openid);
+                    userInfo.setNickname((String) userInfoMap.get("nickName"));
+                    userInfo.setSex((Integer) userInfoMap.get("gender"));
+                    userInfo.setLanguage((String) userInfoMap.get("language"));
+                    userInfo.setCity((String) userInfoMap.get("city"));
+                    userInfo.setProvince((String) userInfoMap.get("province"));
+                    userInfo.setCountry((String) userInfoMap.get("country"));
+                    userInfo.setHeadimgurl((String) userInfoMap.get("avatarUrl"));
+                    userInfo.setUnionid((String) userInfoMap.get("unionId"));
+                    userInfo.setCreatedBy("SYS:login");
+                    userInfo.setCreatedDate(new Date());
+                    this.userMapper.insertUserInfo(userInfo);
+                } else {
+                    optlock++;
+                    this.userMapper.update(optlock, new Date(), openid);
+                }
+                // 生成第三方session
+                String session = MD5.getMessageDigest((sessinKey + encryptedData + iv).getBytes());
+                // 设置session过期
+                redisService.setKeyValueTimeout(session, openid, expiresIn);
+                Map<String, Object> data = new HashMap<>();
+                data.put("session", session);
+                bacMap.put("data", data);
+                bacMap.put("code", 0);
+                bacMap.put("msg", "成功");
             }
-            // 生成第三方session
-            String session = MD5.getMessageDigest((sessinKey + encryptedData + iv).getBytes());
-            // 设置session过期
-            redisService.setKeyValueTimeout(session, openid, expiresIn);
-            Map<String, Object> data = new HashMap<>();
-            data.put("session", session);
-            bacMap.put("data", data);
-            bacMap.put("code", 0);
-            bacMap.put("msg", "成功");
         } catch (Exception e) {
             logger.error(e.getMessage());
             bacMap.put("data", null);
@@ -112,13 +127,13 @@ public class UserController {
         try {
             String openid = redisService.getKeyValue(session);
             UserInfoVo userInfoVo = this.userMapper.findUserinfo(openid);
-            if (null != userInfoVo){
+            if (null != userInfoVo) {
                 Map<String, Object> data = new HashMap<>();
                 bacMap.put("code", 0);
                 bacMap.put("msg", "成功");
                 data.put("user_info", userInfoVo);
                 bacMap.put("data", data);
-            }else {
+            } else {
                 bacMap.put("data", null);
                 bacMap.put("code", 2);
                 bacMap.put("msg", "session有误");
