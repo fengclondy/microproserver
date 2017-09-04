@@ -6,6 +6,7 @@ import com.ycb.wxxcx.provider.mapper.ShopStationMapper;
 import com.ycb.wxxcx.provider.mapper.StationMapper;
 import com.ycb.wxxcx.provider.mapper.UserMapper;
 import com.ycb.wxxcx.provider.service.FeeStrategyService;
+import com.ycb.wxxcx.provider.service.FrequencyService;
 import com.ycb.wxxcx.provider.utils.JsonUtils;
 import com.ycb.wxxcx.provider.vo.FeeStrategy;
 import com.ycb.wxxcx.provider.vo.User;
@@ -23,7 +24,7 @@ import java.util.Map;
  * Created by zhuhui on 17-8-7.
  */
 @RestController
-    @RequestMapping("borrow")
+@RequestMapping("borrow")
 public class BorrowController {
 
     public static final Logger logger = LoggerFactory.getLogger(BorrowController.class);
@@ -33,6 +34,9 @@ public class BorrowController {
 
     @Autowired
     private FeeStrategyService feeStrategyService;
+
+    @Autowired
+    private FrequencyService frequencyService;
 
     @Autowired
     private StationMapper stationMapper;
@@ -53,17 +57,27 @@ public class BorrowController {
     @ResponseBody
     public String getMachineInfo(@RequestParam("session") String session,
                                  @RequestParam("qrcode") String qrcode) {
+
+        Map<String, Object> bacMap = new HashMap<>();
+        Map<String, Object> data = new HashMap<>();
+        User user = this.userMapper.findUserinfoByOpenid(redisService.getKeyValue(session));
+        //todo 租借限制
+        boolean res= this.frequencyService.queryBorrowFrequency(user);
+        if (false == res){
+            data.put("errcode",2);
+            bacMap.put("data", data);
+            bacMap.put("code", 0);
+            bacMap.put("msg", "失败,租借受限");
+            return JsonUtils.writeValueAsString(bacMap);
+        }
         // 解析qrcode，根据机器sid，获取机器状态属性值
         String[] urlArr = qrcode.trim().toLowerCase().split("/");
         String sid = urlArr[urlArr.length - 1];
         String cable_type = stationMapper.getUsableBatteries(Long.valueOf(sid));
-        User user = this.userMapper.findUserinfoByOpenid(redisService.getKeyValue(session));
         FeeStrategy feeStrategy = shopStationMapper.findFeeStrategyByStation(Long.valueOf(sid));
         String feeStr = feeStrategyService.transFeeStrategy(feeStrategy);
         Boolean exitOrder =  orderMapper.findTodayOrder(Long.valueOf(sid),user.getId());
-        Map<String, Object> bacMap = new HashMap<>();
         try {
-            Map<String, Object> data = new HashMap<>();
             data.put("sid", sid);
             data.put("tid", session);
             data.put("need_pay", defaultPay.subtract(user.getUsablemoney()));//用户需支付金额
