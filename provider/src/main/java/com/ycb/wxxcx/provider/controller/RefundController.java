@@ -172,7 +172,7 @@ public class RefundController {
                             order.setRefunded(refundMoney);  //更新已退款至账户的金额
                             this.orderMapper.updateOrderStatusToFour(order);
 
-                            //todo 推送退款成功消息
+                            //推送退款成功消息
                             Message message = this.messageService.getFormIdByOpenid(openid); //获取form_id
                             if (null !=message){
                                 //使用form_id推送消息

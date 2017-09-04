@@ -2,6 +2,7 @@ package com.ycb.wxxcx.provider.mapper;
 
 import com.ycb.wxxcx.provider.vo.Order;
 import com.ycb.wxxcx.provider.vo.TradeLog;
+import com.ycb.wxxcx.provider.vo.User;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -78,4 +79,13 @@ public interface OrderMapper {
             "AND status <5 " +
             "AND borrow_time > DATE_FORMAT(CURDATE(),'%Y-%m-%d %H:%i:%s') ")
     Boolean findTodayOrder(@Param("stationid") Long stationid, @Param("customer") Long customer);
+
+    @Select("SELECT COUNT(*) FROM ycb_mcs_tradelog WHERE status = 2 AND customer = #{id}")
+    Integer findUserUseBatteryNum(User user);
+
+    @Select("SELECT COUNT(*) FROM ycb_mcs_tradelog " +
+            "WHERE status NOT in(0,1,96) " +
+            "AND DATE(borrow_time)=(SELECT CURDATE()) " +
+            "AND customer = #{id}")
+    Integer findUserOrderNum(User user);
 }

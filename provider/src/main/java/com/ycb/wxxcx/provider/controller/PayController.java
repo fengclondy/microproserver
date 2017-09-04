@@ -3,7 +3,6 @@ package com.ycb.wxxcx.provider.controller;
 import com.ycb.wxxcx.provider.cache.RedisService;
 import com.ycb.wxxcx.provider.constant.GlobalConfig;
 import com.ycb.wxxcx.provider.mapper.*;
-import com.ycb.wxxcx.provider.service.MessageService;
 import com.ycb.wxxcx.provider.service.SocketService;
 import com.ycb.wxxcx.provider.utils.HttpRequest;
 import com.ycb.wxxcx.provider.utils.JsonUtils;
@@ -56,9 +55,6 @@ public class PayController {
 
     @Autowired
     private MessageMapper messageMapper;
-
-    @Autowired
-    private MessageService messageService;
 
     @Value("${appID}")
     private String appID;
