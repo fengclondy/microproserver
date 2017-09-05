@@ -2,11 +2,9 @@ package com.ycb.wxxcx.provider.controller;
 
 import com.ycb.wxxcx.provider.cache.RedisService;
 import com.ycb.wxxcx.provider.mapper.OrderMapper;
-import com.ycb.wxxcx.provider.mapper.ShopStationMapper;
 import com.ycb.wxxcx.provider.mapper.StationMapper;
 import com.ycb.wxxcx.provider.mapper.UserMapper;
 import com.ycb.wxxcx.provider.service.FeeStrategyService;
-import com.ycb.wxxcx.provider.service.FrequencyService;
 import com.ycb.wxxcx.provider.utils.JsonUtils;
 import com.ycb.wxxcx.provider.vo.FeeStrategy;
 import com.ycb.wxxcx.provider.vo.User;
@@ -36,16 +34,10 @@ public class BorrowController {
     private FeeStrategyService feeStrategyService;
 
     @Autowired
-    private FrequencyService frequencyService;
-
-    @Autowired
     private StationMapper stationMapper;
 
     @Autowired
     private UserMapper userMapper;
-
-    @Autowired
-    private ShopStationMapper shopStationMapper;
 
     @Autowired
     private OrderMapper orderMapper;
@@ -61,20 +53,12 @@ public class BorrowController {
         Map<String, Object> bacMap = new HashMap<>();
         Map<String, Object> data = new HashMap<>();
         User user = this.userMapper.findUserinfoByOpenid(redisService.getKeyValue(session));
-        //todo 租借限制
-        boolean res= this.frequencyService.queryBorrowFrequency(user);
-        if (false == res){
-            data.put("errcode",2);
-            bacMap.put("data", data);
-            bacMap.put("code", 0);
-            bacMap.put("msg", "失败,租借受限");
-            return JsonUtils.writeValueAsString(bacMap);
-        }
+
         // 解析qrcode，根据机器sid，获取机器状态属性值
         String[] urlArr = qrcode.trim().toLowerCase().split("/");
         String sid = urlArr[urlArr.length - 1];
         String cable_type = stationMapper.getUsableBatteries(Long.valueOf(sid));
-        FeeStrategy feeStrategy = shopStationMapper.findFeeStrategyByStation(Long.valueOf(sid));
+        FeeStrategy feeStrategy = feeStrategyService.findFeeStrategyByStation(Long.valueOf(sid));
         String feeStr = feeStrategyService.transFeeStrategy(feeStrategy);
         Boolean exitOrder =  orderMapper.findTodayOrder(Long.valueOf(sid),user.getId());
         try {

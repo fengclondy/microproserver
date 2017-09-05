@@ -3,6 +3,7 @@ package com.ycb.wxxcx.provider.controller;
 import com.ycb.wxxcx.provider.cache.RedisService;
 import com.ycb.wxxcx.provider.constant.GlobalConfig;
 import com.ycb.wxxcx.provider.mapper.*;
+import com.ycb.wxxcx.provider.service.FrequencyService;
 import com.ycb.wxxcx.provider.service.SocketService;
 import com.ycb.wxxcx.provider.utils.HttpRequest;
 import com.ycb.wxxcx.provider.utils.JsonUtils;
@@ -37,6 +38,9 @@ public class PayController {
 
     @Autowired
     private RedisService redisService;
+
+    @Autowired
+    private FrequencyService frequencyService;
 
     @Autowired
     private UserMapper userMapper;
@@ -87,6 +91,14 @@ public class PayController {
         try {
             String openid = redisService.getKeyValue(session);
             User user = userMapper.findUserIdByOpenid(openid);
+            // 租借限制
+            boolean bfres = this.frequencyService.queryBorrowFrequency(user);
+            if (false == bfres) {
+                bacMap.put("errcode", 2);
+                bacMap.put("code", 2);
+                bacMap.put("msg", "失败,租借受限");
+                return JsonUtils.writeValueAsString(bacMap);
+            }
             if (defaultPay.subtract(user.getUsablemoney()).compareTo(BigDecimal.ZERO) <= 0) {
                 // need pay 为0时，直接使用余额支付
                 //创建订单
@@ -253,8 +265,7 @@ public class PayController {
                     //根据订单查询MAC和CABLE
                     Station station = stationMapper.getMacCableByOrderid(outTradeNo);
                     socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;STATIONID:" + station.getId() + ";MAC:" + station.getMac() + ";ORDERID:" + outTradeNo + ";COLORID:7;CABLE:" + station.getCable() + ";\r\n");
-
-                     logger.info("ORDERID:" + outTradeNo + "支付成功！");
+                    logger.info("ORDERID:" + outTradeNo + "支付成功！");
                 }
                 // 告诉微信服务器，我收到信息了，不要在调用回调action了
                 return WXPayUtil.setXML("SUCCESS", "OK");

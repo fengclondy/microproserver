@@ -1,9 +1,12 @@
 package com.ycb.wxxcx.provider.service;
 
+import com.ycb.wxxcx.provider.mapper.FeeStrategyMapper;
+import com.ycb.wxxcx.provider.mapper.ShopStationMapper;
 import com.ycb.wxxcx.provider.utils.TimeUtil;
 import com.ycb.wxxcx.provider.vo.FeeStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -16,6 +19,12 @@ import java.math.BigDecimal;
 public class FeeStrategyService {
 
     public static final Logger logger = LoggerFactory.getLogger(FeeStrategyService.class);
+
+    @Autowired
+    private ShopStationMapper shopStationMapper;
+
+    @Autowired
+    private FeeStrategyMapper feeStrategyMapper;
 
     public String transFeeStrategy(FeeStrategy feeStrategy) {
         //固定收费
@@ -49,7 +58,7 @@ public class FeeStrategyService {
         BigDecimal useFee = BigDecimal.ZERO;
         Long freeTimeUnit = feeStrategy.getFreeTime() * feeStrategy.getFreeUnit();
         Long maxFeeTimeUnit = feeStrategy.getMaxFeeTime() * feeStrategy.getMaxFeeUnit();
-        if (duration < freeTimeUnit) {
+        if (duration == null || duration < freeTimeUnit) {
             // 如果租借时长小于意外借出时间，则不计费用
             return useFee;
         } else if (duration > maxFeeTimeUnit) {
@@ -67,4 +76,14 @@ public class FeeStrategyService {
         }
         return useFee;
     }
+
+    public FeeStrategy findFeeStrategyByStation(Long stationid) {
+        FeeStrategy fFeeStrategy = shopStationMapper.findFeeStrategyByStation(stationid);
+        if (fFeeStrategy == null) {
+            // 获取全局收费配置
+            fFeeStrategy = feeStrategyMapper.findGlobalFeeStrategy();
+        }
+        return fFeeStrategy;
+    }
+
 }

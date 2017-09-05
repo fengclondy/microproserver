@@ -79,14 +79,18 @@ public class OrderController {
      * @return
      * @throws IOException
      */
-    @RequestMapping(value = "/getOrderStatus", method = RequestMethod.GET)
+    @RequestMapping(value = "/getOrderStatus", method = RequestMethod.POST)
     public String getOrderStatus(@RequestParam("session") String session,
                                  @RequestParam("orderid") String orderid) throws IOException {
         Map<String, Object> bacMap = new HashMap<>();
         try {
             Integer orderStatus = this.orderMapper.getOrderStatus(orderid);
             Map<String, Object> data = new HashMap<String, Object>();
-            data.put("status", orderStatus);
+            if (orderStatus == 2){
+                data.put("status", "1");//借出成功
+            } else {
+                data.put("status", "0");//还未弹出
+            }
             bacMap.put("data", data);
             bacMap.put("code", 0);
             bacMap.put("msg", "成功");
