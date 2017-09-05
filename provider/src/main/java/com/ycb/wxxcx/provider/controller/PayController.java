@@ -72,6 +72,9 @@ public class PayController {
     @Value("${key}")
     private String key;
 
+    @Value("${dev_mode}")
+    private boolean devMode;
+
     @Autowired
     private HttpServletRequest request;
 
@@ -92,12 +95,14 @@ public class PayController {
             String openid = redisService.getKeyValue(session);
             User user = userMapper.findUserIdByOpenid(openid);
             // 租借限制
-            boolean bfres = this.frequencyService.queryBorrowFrequency(user);
-            if (false == bfres) {
-                bacMap.put("errcode", 2);
-                bacMap.put("code", 2);
-                bacMap.put("msg", "失败,租借受限");
-                return JsonUtils.writeValueAsString(bacMap);
+            if (devMode){
+                boolean bfres = this.frequencyService.queryBorrowFrequency(user);
+                if (false == bfres) {
+                    bacMap.put("errcode", 2);
+                    bacMap.put("code", 2);
+                    bacMap.put("msg", "失败,租借受限");
+                    return JsonUtils.writeValueAsString(bacMap);
+                }
             }
             if (defaultPay.subtract(user.getUsablemoney()).compareTo(BigDecimal.ZERO) <= 0) {
                 // need pay 为0时，直接使用余额支付
