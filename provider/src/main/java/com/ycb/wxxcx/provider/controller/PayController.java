@@ -33,8 +33,6 @@ public class PayController {
 
     public static final Logger logger = LoggerFactory.getLogger(PayController.class);
 
-    public static boolean debug = true;
-
     @Autowired
     private SocketService socketService;
 
@@ -74,6 +72,9 @@ public class PayController {
     @Value("${key}")
     private String key;
 
+    @Value("${dev_mode}")
+    private boolean devMode;
+
     @Autowired
     private HttpServletRequest request;
 
@@ -94,7 +95,7 @@ public class PayController {
             String openid = redisService.getKeyValue(session);
             User user = userMapper.findUserIdByOpenid(openid);
             // 租借限制
-            if (debug){
+            if (devMode){
                 boolean bfres = this.frequencyService.queryBorrowFrequency(user);
                 if (false == bfres) {
                     bacMap.put("errcode", 2);
