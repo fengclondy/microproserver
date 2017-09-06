@@ -115,99 +115,108 @@ public class RefundController {
                 //创建退款记录
                 Refund refund = new Refund();
                 BigDecimal refundMoney = (orderList.get(i).getPaid()).subtract(orderList.get(i).getUsefee());//退款金额
-                refund.setRefund(refundMoney);
-                refund.setStatus(1);//申请提现状态
-                refund.setOrderid(orderList.get(i).getOrderid());
-                refund.setUid(user.getId());
-                refund.setCreatedBy("SYS:refund");
-                this.refundMapper.insertRefund(refund);//写入退款记录表
+                if (refundMoney.compareTo(BigDecimal.ZERO) > 0){
 
-                //更新用户待退款金额
-                user.setRefund(refundMoney);
-                user.setLastModifiedBy("SYS:refund");
-                this.userMapper.updateUserRefund(user);
+                    refund.setRefund(refundMoney);
+                    refund.setStatus(1);//申请提现状态
+                    refund.setOrderid(orderList.get(i).getOrderid());
+                    refund.setUid(user.getId());
+                    refund.setCreatedBy("SYS:refund");
+                    this.refundMapper.insertRefund(refund);//写入退款记录表
 
-                newRefund = this.refundMapper.findRefundIdByUid(user.getId());//拿退款编号
+                    //更新用户待退款金额
+                    user.setRefund(refundMoney);
+                    user.setLastModifiedBy("SYS:refund");
+                    this.userMapper.updateUserRefund(user);
 
-                String out_trade_no = orderList.get(i).getOrderid();//商户订单号
-                String out_refund_no = newRefund.getId().toString();//商户退款编号
-                Long total_fee = orderList.get(i).getPaid().multiply(BigDecimal.valueOf(100)).longValueExact();//订单金额
-                Long refund_fee = refundMoney.multiply(BigDecimal.valueOf(100)).longValueExact();//退款总金额
+                    newRefund = this.refundMapper.findRefundIdByUid(user.getId());//拿退款编号
 
-                SortedMap<String, Object> parameters = new TreeMap<String, Object>();
-                parameters.put("appid", appID);//公众账号ID
-                parameters.put("mch_id", mchId);//商户号
-                parameters.put("nonce_str", WXPayUtil.getNonce_str());//生成随机字符串
-                // 在notify_url中解析微信返回的信息获取到 transaction_id，此项不是必填，详细请看上图文档
-                // parameters.put("transaction_id", "微信支付订单中调用统一接口后微信返回的 transaction_id");
-                parameters.put("out_trade_no", out_trade_no);//商户系统内部订单号
-                parameters.put("out_refund_no", out_refund_no); //商户系统内部的退款单号，约束为UK唯一
-                parameters.put("total_fee", total_fee); //订单总金额：单位为分
-                parameters.put("refund_fee", refund_fee); //退款总金额：单位为分
-                parameters.put("op_user_id", mchId);// 操作员帐号, 默认为商户号
+                    String out_trade_no = orderList.get(i).getOrderid();//商户订单号
+                    String out_refund_no = newRefund.getId().toString();//商户退款编号
+                    Long total_fee = orderList.get(i).getPaid().multiply(BigDecimal.valueOf(100)).longValueExact();//订单金额
+                    Long refund_fee = refundMoney.multiply(BigDecimal.valueOf(100)).longValueExact();//退款总金额
 
-                String xml = WXPayUtil.map2Xml(parameters, key);
-                String createOrderURL = GlobalConfig.WX_CREATORDER_URL;
+                    SortedMap<String, Object> parameters = new TreeMap<String, Object>();
+                    parameters.put("appid", appID);//公众账号ID
+                    parameters.put("mch_id", mchId);//商户号
+                    parameters.put("nonce_str", WXPayUtil.getNonce_str());//生成随机字符串
+                    // 在notify_url中解析微信返回的信息获取到 transaction_id，此项不是必填，详细请看上图文档
+                    // parameters.put("transaction_id", "微信支付订单中调用统一接口后微信返回的 transaction_id");
+                    parameters.put("out_trade_no", out_trade_no);//商户系统内部订单号
+                    parameters.put("out_refund_no", out_refund_no); //商户系统内部的退款单号，约束为UK唯一
+                    parameters.put("total_fee", total_fee); //订单总金额：单位为分
+                    parameters.put("refund_fee", refund_fee); //退款总金额：单位为分
+                    parameters.put("op_user_id", mchId);// 操作员帐号, 默认为商户号
 
-                try {
-                    String mch_id = mchId;
-                    Map map = RefundUtil.forRefund(createOrderURL, xml, mch_id);
-                    if (map != null) {
-                        String return_code = (String) map.get("return_code");//返回状态码
-                        String result_code = (String) map.get("result_code");//业务结果
-                        if (return_code.equals("SUCCESS") && result_code.equals("SUCCESS")) {
-                            //更新退款金额
-                            newRefund.setLastModifiedBy("SYS:refund");
-                            newRefund.setRefund(refundMoney);
-                            this.refundMapper.updateRefunded(newRefund);
-                            //减掉用户的可用余额，减掉待退款金额，更新已退款金额
-                            user.setLastModifiedBy("SYS:refund");
-                            user.setRefund(refundMoney);  //需要减掉的金额
-                            this.userMapper.updateUsablemoneyByUid(user);
-                            //修改订单表里的状态为4 已退款状态
-                            Order order = new Order();
-                            order.setOrderid(orderList.get(i).getOrderid());
-                            order.setLastModifiedBy("SYS:refund");
-                            order.setStatus(4);
-                            order.setRefunded(refundMoney);  //更新已退款至账户的金额
-                            this.orderMapper.updateOrderStatusToFour(order);
+                    String xml = WXPayUtil.map2Xml(parameters, key);
+                    String createOrderURL = GlobalConfig.WX_CREATORDER_URL;
 
-                            //推送退款成功消息
-                            Message message = this.messageService.getFormIdByOpenid(openid); //获取form_id
-                            if (null !=message){
-                                //使用form_id推送消息
-                                this.messageService.refundSendTemplate(openid,wxRefundTemplateId,message,newRefund.getId());
-                            }else {
-                                logger.info("orderId:" + orderList.get(i).getOrderid() + "该条退款消息推送失败！没有可用的form_id了");
+                    try {
+                        String mch_id = mchId;
+                        Map map = RefundUtil.forRefund(createOrderURL, xml, mch_id);
+                        if (map != null) {
+                            String return_code = (String) map.get("return_code");//返回状态码
+                            String result_code = (String) map.get("result_code");//业务结果
+                            if (return_code.equals("SUCCESS") && result_code.equals("SUCCESS")) {
+                                //更新退款金额
+                                newRefund.setLastModifiedBy("SYS:refund");
+                                newRefund.setRefund(refundMoney);
+                                this.refundMapper.updateRefunded(newRefund);
+                                //减掉用户的可用余额，减掉待退款金额，更新已退款金额
+                                user.setLastModifiedBy("SYS:refund");
+                                user.setRefund(refundMoney);  //需要减掉的金额
+                                this.userMapper.updateUsablemoneyByUid(user);
+                                //修改订单表里的状态为4 已退款状态
+                                Order order = new Order();
+                                order.setOrderid(orderList.get(i).getOrderid());
+                                order.setLastModifiedBy("SYS:refund");
+                                order.setStatus(4);
+                                order.setRefunded(refundMoney);  //更新已退款至账户的金额
+                                this.orderMapper.updateOrderStatusToFour(order);
+
+                                //推送退款成功消息
+                                Message message = this.messageService.getFormIdByOpenid(openid); //获取form_id
+                                if (null !=message){
+                                    //使用form_id推送消息
+                                    this.messageService.refundSendTemplate(openid,wxRefundTemplateId,message,newRefund.getId());
+                                }else {
+                                    logger.info("orderId:" + orderList.get(i).getOrderid() + "该条退款消息推送失败！没有可用的form_id了");
+                                }
+
+                                bacMap.put("code", 0);
+                                bacMap.put("msg", "退款成功");
+                                bacMap.put("errcode", 0);
+                                bacMap.put("errmsg", "退款成功");
+                            } else {
+                                String return_msg = (String) map.get("return_msg");
+                                logger.error("退款失败 退款编号："+ newRefund.getId()+"描述:"+return_msg);
+                                bacMap.put("code", 5);
+                                bacMap.put("msg", "退款失败，返回结果有误");
+                                bacMap.put("errcode", 5);
+                                bacMap.put("errmsg", "退款失败，返回结果有误");
                             }
-
-                            bacMap.put("code", 0);
-                            bacMap.put("msg", "退款成功");
-                            bacMap.put("errcode", 0);
-                            bacMap.put("errmsg", "退款成功");
                         } else {
-                            String return_msg = (String) map.get("return_msg");
-                            logger.error("退款失败 退款编号："+ newRefund.getId()+"描述:"+return_msg);
-                            bacMap.put("code", 5);
-                            bacMap.put("msg", "退款失败，返回结果有误");
-                            bacMap.put("errcode", 5);
-                            bacMap.put("errmsg", "退款失败，返回结果有误");
+                            logger.error("签名失败");
+                            bacMap.put("code", 4);
+                            bacMap.put("msg", "签名失败，参数格式校验错误");
+                            bacMap.put("errcode", 4);
+                            bacMap.put("errmsg", "签名失败，参数格式校验错误");
                         }
-                    } else {
-                        logger.error("签名失败");
-                        bacMap.put("code", 4);
-                        bacMap.put("msg", "签名失败，参数格式校验错误");
-                        bacMap.put("errcode", 4);
-                        bacMap.put("errmsg", "签名失败，参数格式校验错误");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        logger.error("异常退款编号："+ newRefund.getId());
+                        bacMap.put("code", 3);
+                        bacMap.put("msg", "退款失败（系统有异常）");
+                        bacMap.put("errcode", 3);
+                        bacMap.put("errmsg", "退款失败（系统有异常）");
+                        return JsonUtils.writeValueAsString(bacMap);
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    logger.error("异常退款编号："+ newRefund.getId());
-                    bacMap.put("code", 3);
-                    bacMap.put("msg", "退款失败（系统有异常）");
-                    bacMap.put("errcode", 3);
-                    bacMap.put("errmsg", "退款失败（系统有异常）");
-                    return JsonUtils.writeValueAsString(bacMap);
+                }else {
+                    logger.error("订单余额不足 ："+orderList.get(i).getOrderid());
+                    bacMap.put("code", 0);
+                    bacMap.put("msg", "订单余额不足 ："+orderList.get(i).getOrderid());
+                    bacMap.put("errcode", 0);
+                    bacMap.put("errmsg", "订单余额不足 ："+orderList.get(i).getOrderid());
                 }
             }
         }
