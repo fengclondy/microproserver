@@ -12,9 +12,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -49,18 +51,21 @@ public class BorrowController {
     @ResponseBody
     public String getMachineInfo(@RequestParam("session") String session,
                                  @RequestParam("qrcode") String qrcode) {
-
         Map<String, Object> bacMap = new HashMap<>();
         Map<String, Object> data = new HashMap<>();
         User user = this.userMapper.findUserinfoByOpenid(redisService.getKeyValue(session));
-
         // 解析qrcode，根据机器sid，获取机器状态属性值
         String[] urlArr = qrcode.trim().toLowerCase().split("/");
         String sid = urlArr[urlArr.length - 1];
         String cable_type = stationMapper.getUsableBatteries(Long.valueOf(sid));
+        // 判断设备是否在线
+        String lastHearTime = redisService.getKeyValue(sid);
+        if (StringUtils.isEmpty(lastHearTime) || (new Date().getTime() / 1000 - Long.valueOf(lastHearTime)) > 60 * 5) {
+            cable_type = "{\"1\":\"0\",\"2\":\"0\",\"3\":\"0\"}";
+        }
         FeeStrategy feeStrategy = feeStrategyService.findFeeStrategyByStation(Long.valueOf(sid));
         String feeStr = feeStrategyService.transFeeStrategy(feeStrategy);
-        Boolean exitOrder =  orderMapper.findTodayOrder(Long.valueOf(sid),user.getId());
+        Boolean exitOrder = orderMapper.findTodayOrder(Long.valueOf(sid), user.getId());
         try {
             data.put("sid", sid);
             data.put("tid", session);

@@ -55,7 +55,7 @@ public class ShopController {
     @ResponseBody
     // @Action --修改 为拦截器方式实现
     public String query(@RequestParam("session") String session,
-                        @RequestParam("shop_id") Integer shopid) {
+                        @RequestParam("shop_id") Long shopid) {
         Map<String, Object> bacMap = new HashMap<>();
         try {
             ShopStation shop =  this.shopMapper.findShopInfo(shopid);

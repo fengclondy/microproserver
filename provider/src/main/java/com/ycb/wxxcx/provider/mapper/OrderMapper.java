@@ -15,22 +15,35 @@ import java.util.List;
 public interface OrderMapper {
 
     //通過用戶id查詢交易记录
-    @Select("SELECT *,(UNIX_TIMESTAMP(t.return_time) - UNIX_TIMESTAMP(t.borrow_time)) duration " +
+    @Select("SELECT *, " +
+            "ssout.title borrowName , " +
+            "t.borrow_time borrowTime , " +
+            "ssin.title returnName , " +
+            "t.return_time returnTime , " +
+            "t.usefee usefee , " +
+            "CASE " +
+            "WHEN t.return_time is null THEN " +
+            "(UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(t.borrow_time)) " +
+            "WHEN t.return_time is not null THEN " +
+            "(UNIX_TIMESTAMP(t.return_time) - UNIX_TIMESTAMP(t.borrow_time)) " +
+            "END duration " +
             "FROM ycb_mcs_tradelog t " +
-            "LEFT JOIN ycb_mcs_shop_station ss " +
-            "ON t.borrow_shop_station_id = ss.id " +
+            "LEFT JOIN ycb_mcs_shop_station ssout " +
+            "ON t.borrow_shop_station_id = ssout.id " +
             "LEFT JOIN ycb_mcs_fee_strategy f " +
-            "ON ss.fee_settings = f.id " +
+            "ON ssout.fee_settings = f.id " +
+            "LEFT JOIN ycb_mcs_shop_station ssin " +
+            "ON t.return_shop_station_id = ssin.id " +
             "WHERE t.customer = #{customer} " +
             "AND t.status <> 0 " +
             "ORDER BY t.id DESC LIMIT 0,20")
     @Results(id = "station", value = {
-            @Result(property = "orderid", column = "orderid"),
-            @Result(property = "status", column = "status"),
-            @Result(property = "borrowName", column = "borrow_station_name"),
-            @Result(property = "borrowTime", column = "borrow_time"),
-            @Result(property = "returnName", column = "return_station_name"),
-            @Result(property = "returnTime", column = "return_time"),
+            @Result(property = "orderid", column = "t.orderid"),
+            @Result(property = "status", column = "t.status"),
+            @Result(property = "borrowName", column = "borrowName"),
+            @Result(property = "borrowTime", column = "borrowTime"),
+            @Result(property = "returnName", column = "returnName"),
+            @Result(property = "returnTime", column = "returnTime"),
             @Result(property = "usefee", column = "usefee"),
             @Result(property = "duration", column = "duration"),
             @Result(property = "feeStrategy", column = "fee_settings", one = @One(select = "com.ycb.wxxcx.provider.mapper.FeeStrategyMapper.findFeeStrategy"))

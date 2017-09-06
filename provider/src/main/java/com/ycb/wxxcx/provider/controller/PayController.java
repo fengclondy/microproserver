@@ -95,7 +95,7 @@ public class PayController {
             String openid = redisService.getKeyValue(session);
             User user = userMapper.findUserIdByOpenid(openid);
             // 租借限制
-            if (devMode){
+            if (!devMode){
                 boolean bfres = this.frequencyService.queryBorrowFrequency(user);
                 if (false == bfres) {
                     bacMap.put("errcode", 2);

@@ -49,7 +49,10 @@ public class OrderController {
             List<TradeLog> tradeLogList = this.orderMapper.findTradeLogs(user.getId());
             for (int i = 0; i < tradeLogList.size(); i++) {
                 tradeLogList.get(i).setFeeStr(feeStrategyService.transFeeStrategy(tradeLogList.get(i).getFeeStrategy()));
-                tradeLogList.get(i).setUseFee(feeStrategyService.calUseFee(tradeLogList.get(i).getFeeStrategy(), tradeLogList.get(i).getDuration()));
+                tradeLogList.get(i).setUseFee(feeStrategyService.calUseFee(tradeLogList.get(i).getFeeStrategy(),
+                        tradeLogList.get(i).getDuration(),
+                        tradeLogList.get(i).getStatus(),
+                        tradeLogList.get(i).getUseFee()));
             }
             if (null != tradeLogList) {
                 Map<String, List> data = new HashMap<String, List>();
@@ -86,7 +89,7 @@ public class OrderController {
         try {
             Integer orderStatus = this.orderMapper.getOrderStatus(orderid);
             Map<String, Object> data = new HashMap<String, Object>();
-            if (orderStatus == 2){
+            if (orderStatus == 2) {
                 data.put("status", "1");//借出成功
             } else {
                 data.put("status", "0");//还未弹出

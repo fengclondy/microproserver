@@ -17,16 +17,14 @@ public interface ShopMapper {
     //            "Where ss.shopid = shop.id And ss.station_id = s.id " +
     //            "And abs(ss.latitude - #{latitude}) < 50 " +
     //            "And abs(ss.longitude - #{longitude}) < 50 ")
-    @Select("Select * From ycb_mcs_shop shop, ycb_mcs_shop_station ss, ycb_mcs_station s " +
-            "Where ss.shopid = shop.id And ss.station_id = s.id " +
+    @Select("Select *,ss.title name From ycb_mcs_shop_station ss " +
+            "Left Join ycb_mcs_station s " +
+            "On ss.station_id = s.id " +
             "And abs(ss.latitude - #{latitude}) < 50 " +
             "And abs(ss.longitude - #{longitude}) < 50 ")
     @Results({
-            @Result(property = "name", column = "shop.name"),
-            @Result(property = "address", column = "ss.address"),
-            @Result(property = "latitude", column = "ss.latitude"),
-            @Result(property = "longitude", column = "ss.longitude"),
-            @Result(property = "shopStation", column = "station_id", many = @Many(select ="com.ycb.wxxcx.provider.mapper.ShopMapper.findStations"))
+            @Result(property = "name", column = "name"),
+            @Result(property = "shopStation", column = "station_id", many = @Many(select = "com.ycb.wxxcx.provider.mapper.ShopMapper.findStations"))
     })
     List<ShopStation> findShops(@Param("latitude") String latitude, @Param("longitude") String longitude);
 
@@ -52,8 +50,8 @@ public interface ShopMapper {
     Shop getShopInfoBySid(String sid);
 
     @Select("Select * From ycb_mcs_shop shop, ycb_mcs_shop_station ss, ycb_mcs_station s " +
-            "Where ss.shopid = shop.id And ss.station_id = s.id "+
-            "AND shop.id = #{shopid}")
+            "Where ss.shopid = shop.id And ss.station_id = s.id " +
+            "AND ss.id = #{shopStationId}")
     @Results({
             @Result(property = "name", column = "shop.name"),
             @Result(property = "address", column = "ss.address"),
@@ -63,7 +61,7 @@ public interface ShopMapper {
             @Result(property = "phone", column = "shop.phone"),
             @Result(property = "stime", column = "shop.stime"),
             @Result(property = "etime", column = "shop.etime"),
-            @Result(property = "shopStation", column = "station_id", many = @Many(select ="com.ycb.wxxcx.provider.mapper.ShopMapper.findStations"))
+            @Result(property = "shopStation", column = "station_id", many = @Many(select = "com.ycb.wxxcx.provider.mapper.ShopMapper.findStations"))
     })
-    ShopStation findShopInfo(@Param("shopid") Integer shopid);
+    ShopStation findShopInfo(@Param("shopStationId") Long shopStationId);
 }
