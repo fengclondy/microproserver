@@ -5,6 +5,8 @@ import org.apache.catalina.servlet4preview.http.HttpServletRequest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Base64;
 import org.jdom.JDOMException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -25,6 +27,9 @@ import java.util.Map;
  * Created by zhuhui on 17-6-19.
  */
 public class HttpRequest {
+
+    public static final Logger logger = LoggerFactory.getLogger(HttpRequest.class);
+
     /**
      * 向指定URL发送GET方法的请求
      *
@@ -118,6 +123,7 @@ public class HttpRequest {
         } catch (Exception e) {
             System.out.println("发送 POST 请求出现异常！" + e);
             e.printStackTrace();
+            logger.error("发送 POST 请求出现异常！"+ e);
         }
         //使用finally块来关闭输出流、输入流
         finally {
