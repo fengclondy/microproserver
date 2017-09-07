@@ -70,7 +70,7 @@ public class BorrowController {
             data.put("sid", sid);
             data.put("tid", session);
             data.put("need_pay", feeStrategyService.calNeedPay(defaultPay, user.getUsablemoney()));//用户需支付金额
-            data.put("deposite_need", defaultPay);//当用户余额为零时，所需押金
+            data.put("deposite_need", defaultPay);//当用户余额wei零时，所需押金
             data.put("usable_money", user.getUsablemoney());//用户可用金额
             data.put("fee_strategy", feeStr);//收费策略
             data.put("free_display", !exitOrder);// 显示免费

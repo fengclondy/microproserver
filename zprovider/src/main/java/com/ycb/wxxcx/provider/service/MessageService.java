@@ -43,7 +43,7 @@ public class MessageService {
     private String appSecret;
 
     public String getAccessToken() throws Exception {
-        String ACCESS_TOKEN = redisService.getKeyValue("ACCESS_TOKEN").trim();
+        String ACCESS_TOKEN = redisService.getKeyValue("ACCESS_TOKEN");
         if (StringUtils.isEmpty(ACCESS_TOKEN)) {
             String param = "grant_type=client_credential&appid=" + appID + "&secret=" + appSecret;
             try {
@@ -52,7 +52,7 @@ public class MessageService {
                 String accessToken = (String) tokenInfoMap.get("access_token");
                 Integer expiresIn = (Integer) tokenInfoMap.get("expires_in");
                 // 将accessToken存入Redis,存放时间为7200秒
-                redisService.setKeyValueTimeout("ACCESS_TOKEN", accessToken.trim(), expiresIn);
+                redisService.setKeyValueTimeout("ACCESS_TOKEN", accessToken, expiresIn);
                 return accessToken;
             } catch (Exception e) {
                 logger.error(e.getMessage());

@@ -81,9 +81,6 @@ public class PayController {
     @Value("${defaultPay}")
     private BigDecimal defaultPay;
 
-    @Value("${atLeatValue}")
-    private BigDecimal atLeatValue;
-
     @Value("${notifyUrl}")
     public String notifyUrl;
 
@@ -107,7 +104,7 @@ public class PayController {
                     return JsonUtils.writeValueAsString(bacMap);
                 }
             }
-            if (defaultPay.subtract(user.getUsablemoney()).compareTo(atLeatValue) <= 0) {
+            if (defaultPay.subtract(user.getUsablemoney()).compareTo(BigDecimal.ZERO) <= 0) {
                 // need pay 为0时，直接使用余额支付
                 //创建订单
                 String orderid = WXPayUtil.createOrderId();
@@ -168,7 +165,6 @@ public class PayController {
         return JsonUtils.writeValueAsString(bacMap);
     }
 
-
     /**
      * 创建订单
      *
@@ -176,7 +172,6 @@ public class PayController {
      * @param cableType
      * @param user
      * @param orderid
-     * @param orderStatus 11 账户内余额支付
      */
     private void createPreOrder(@RequestParam("sid") String sid, @RequestParam("cable_type") String cableType, User user, String orderid, Integer orderStatus) {
         Station station = stationMapper.getStationBySid(sid);
@@ -231,7 +226,7 @@ public class PayController {
         paramMap.put("spbill_create_ip", remoteAddr);
         // paramMap.put("time_expire", "20170808160434");
         // paramMap.put("time_start", "20170808155434");
-        paramMap.put("total_fee", defaultPay.subtract(usablemoney).multiply(BigDecimal.valueOf(100)).longValue());//费用
+        paramMap.put("total_fee", defaultPay.subtract(usablemoney).multiply(BigDecimal.valueOf(100)).longValue());//费用 TODO
         paramMap.put("trade_type", "JSAPI");
         return paramMap;
     }
