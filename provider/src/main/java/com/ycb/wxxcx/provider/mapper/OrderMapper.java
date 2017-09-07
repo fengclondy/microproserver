@@ -45,6 +45,7 @@ public interface OrderMapper {
             @Result(property = "returnName", column = "returnName"),
             @Result(property = "returnTime", column = "returnTime"),
             @Result(property = "usefee", column = "usefee"),
+            @Result(property = "paid", column = "paid"),
             @Result(property = "duration", column = "duration"),
             @Result(property = "feeStrategy", column = "fee_settings", one = @One(select = "com.ycb.wxxcx.provider.mapper.FeeStrategyMapper.findFeeStrategy"))
     })

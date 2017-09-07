@@ -45,7 +45,8 @@ public interface ShopMapper {
     })
     List<ShopStation> findShopStations();
 
-    @Select("SELECT s.id,s.city FROM ycb_mcs_shop_station ss," +
+    @Select("SELECT s.* " +
+            "FROM ycb_mcs_shop_station ss," +
             "ycb_mcs_shop s WHERE ss.shopid=s.id AND ss.station_id=#{sid}")
     Shop getShopInfoBySid(String sid);
 

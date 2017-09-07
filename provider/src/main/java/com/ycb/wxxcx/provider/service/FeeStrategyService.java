@@ -97,4 +97,11 @@ public class FeeStrategyService {
         return fFeeStrategy;
     }
 
+    public BigDecimal calNeedPay(BigDecimal defaultPay, BigDecimal usablemoney) {
+        if (defaultPay.compareTo(usablemoney) < 0) {
+            return BigDecimal.ZERO;
+        } else {
+            return defaultPay.subtract(usablemoney);
+        }
+    }
 }

@@ -26,6 +26,8 @@ public class TradeLog {
     private String returnTime = "";   //原来是date
     //租借时长
     private String lastTime = "";  //原来是long
+    // 支付金额
+    private BigDecimal paid;
     //产生费用
     private BigDecimal usefee;
     //用来接从数据库查出来的时长
@@ -98,6 +100,14 @@ public class TradeLog {
 
     public void setLastTime(String lastTime) {
         this.lastTime = lastTime;
+    }
+
+    public BigDecimal getPaid() {
+        return paid;
+    }
+
+    public void setPaid(BigDecimal paid) {
+        this.paid = paid;
     }
 
     public BigDecimal getUseFee() {

@@ -95,7 +95,7 @@ public class PayController {
             String openid = redisService.getKeyValue(session);
             User user = userMapper.findUserIdByOpenid(openid);
             // 租借限制
-            if (!devMode){
+            if (!devMode) {
                 boolean bfres = this.frequencyService.queryBorrowFrequency(user);
                 if (false == bfres) {
                     bacMap.put("errcode", 2);
@@ -111,10 +111,8 @@ public class PayController {
                 createPreOrder(sid, cableType, user, orderid, 11);
                 //修改用户账户信息，余额，押金修正
                 userMapper.updateUserDepositUsable(defaultPay, user.getId());
-                Map<String, Object> data = new HashMap<>();
-                data.put("pay_type", 1);//1账户余额支付
-                data.put("orderid", orderid);
-                bacMap.put("data", data);
+                bacMap.put("pay_type", 1);//1账户余额支付
+                bacMap.put("orderid", orderid);
                 bacMap.put("code", 0);
                 bacMap.put("errcode", 0);
                 bacMap.put("msg", "成功");
@@ -182,7 +180,6 @@ public class PayController {
         Order order = new Order();
         order.setCreatedBy("SYS:prepay");
         order.setCreatedDate(new Date());
-        order.setBorrowStationName(station.getTitle());
         //order.setBorrow_time(order.getCreatedDate());预付订单并没有借出成功，不设置借出时间
         order.setOrderid(orderid);//订单编号
         order.setPlatform(3);//平台(小程序)
@@ -195,6 +192,8 @@ public class PayController {
         order.setBorrowShopId(shop.getId());
         order.setBorrowShopStationId(shopStation.getId());
         order.setBorrowStationId(station.getId());
+        order.setBorrowStationName(shop.getName());
+        order.setBorrowCity(shop.getCity());
         orderMapper.saveOrder(order);
     }
 
