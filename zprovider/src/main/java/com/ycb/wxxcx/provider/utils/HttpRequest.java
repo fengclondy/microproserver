@@ -5,8 +5,6 @@ import org.apache.catalina.servlet4preview.http.HttpServletRequest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Base64;
 import org.jdom.JDOMException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -27,9 +25,6 @@ import java.util.Map;
  * Created by zhuhui on 17-6-19.
  */
 public class HttpRequest {
-
-    public static final Logger logger = LoggerFactory.getLogger(HttpRequest.class);
-
     /**
      * 向指定URL发送GET方法的请求
      *
@@ -114,7 +109,8 @@ public class HttpRequest {
             // flush输出流的缓冲
             out.flush();
             // 定义BufferedReader输入流来读取URL的响应
-            in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            in = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream()));
             String line;
             while ((line = in.readLine()) != null) {
                 result += line;
@@ -122,7 +118,6 @@ public class HttpRequest {
         } catch (Exception e) {
             System.out.println("发送 POST 请求出现异常！" + e);
             e.printStackTrace();
-            logger.error("发送 POST 请求出现异常！"+ e);
         }
         //使用finally块来关闭输出流、输入流
         finally {
@@ -201,8 +196,7 @@ public class HttpRequest {
 
     /**
      * 解密退款回调接口的信息
-     *
-     * @param Key           商户Key
+     * @param Key    商户Key
      * @param encryptedData 加密数据
      * @return
      */
@@ -210,7 +204,7 @@ public class HttpRequest {
         // 被加密的数据
         byte[] dataByte = Base64.decode(encryptedData);
         // 加密秘钥
-        byte[] keyByte = MD5.getMessageDigest(Key.getBytes()).toLowerCase().getBytes();
+        byte[] keyByte =  MD5.getMessageDigest(Key.getBytes()).toLowerCase().getBytes();
         try {
             // 初始化
             Security.addProvider(new BouncyCastleProvider());

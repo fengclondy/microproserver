@@ -43,7 +43,7 @@ public class MessageService {
     private String appSecret;
 
     public String getAccessToken() throws Exception {
-        String ACCESS_TOKEN = redisService.getKeyValue("ACCESS_TOKEN").trim();
+        String ACCESS_TOKEN = redisService.getKeyValue("ACCESS_TOKEN");
         if (StringUtils.isEmpty(ACCESS_TOKEN)) {
             String param = "grant_type=client_credential&appid=" + appID + "&secret=" + appSecret;
             try {
@@ -52,7 +52,7 @@ public class MessageService {
                 String accessToken = (String) tokenInfoMap.get("access_token");
                 Integer expiresIn = (Integer) tokenInfoMap.get("expires_in");
                 // 将accessToken存入Redis,存放时间为7200秒
-                redisService.setKeyValueTimeout("ACCESS_TOKEN", accessToken.trim(), expiresIn);
+                redisService.setKeyValueTimeout("ACCESS_TOKEN", accessToken, expiresIn);
                 return accessToken;
             } catch (Exception e) {
                 logger.error(e.getMessage());
@@ -92,32 +92,27 @@ public class MessageService {
             String token = this.getAccessToken();
             String msgUrl = GlobalConfig.WX_SEND_TEMPLATE_MESSAGE + "?access_token=" + token;
             String msgResult = HttpRequest.sendPost(msgUrl, data);  //发送post请求
-            if (StringUtils.isEmpty(msgResult)){
-                logger.info("模板消息发送失败REFUNDID=: " + refundId);
-            }else {
-                Map<String, Object> msgResultMap = JsonUtils.readValue(msgResult);
-                Integer errcode = (Integer) msgResultMap.get("errcode");
-                String errmsg = (String) msgResultMap.get("errmsg");
-                if (0 == errcode) {
-                    logger.info("模板消息发送成功errorCode:{" + errcode + "},errmsg:{" + errmsg + "}");
-                } else {
-                    logger.info("模板消息发送失败errorCode:{" + errcode + "},errmsg:{" + errmsg + "}");
-                }
-                //如果此时的剩余使用次数为1 直接删除
-                if (message.getNumber() <= 1) {
-                    //清除本条数据
-                    this.messageMapper.deleteMessageById(message.getId());
-                    //清除该用户过期数据
-                    this.messageMapper.deleteMessageByOpenid(openid);
-                } else {
-                    //更新prepay_id的使用次数
-                    message.setLastModifiedBy("SYS:message");
-                    this.messageMapper.updateMessageNumberById(message);
-                }
+            Map<String, Object> msgResultMap = JsonUtils.readValue(msgResult);
+            Integer errcode = (Integer) msgResultMap.get("errcode");
+            String errmsg = (String) msgResultMap.get("errmsg");
+            if (0 == errcode) {
+                logger.info("模板消息发送成功errorCode:{" + errcode + "},errmsg:{" + errmsg + "}");
+            } else {
+                logger.info("模板消息发送失败errorCode:{" + errcode + "},errmsg:{" + errmsg + "}");
+            }
+            //如果此时的剩余使用次数为1 直接删除
+            if (message.getNumber() <= 1) {
+                //清除本条数据
+                this.messageMapper.deleteMessageById(message.getId());
+                //清除该用户过期数据
+                this.messageMapper.deleteMessageByOpenid(openid);
+            } else {
+                //更新prepay_id的使用次数
+                message.setLastModifiedBy("SYS:message");
+                this.messageMapper.updateMessageNumberById(message);
             }
         } catch (Exception e) {
             e.printStackTrace();
-            logger.info("模板消息发送失败REFUNDID=: " + refundId);
         }
     }
 }
