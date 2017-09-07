@@ -145,5 +145,4 @@ public class UserController {
         }
         return JsonUtils.writeValueAsString(bacMap);
     }
-
 }
