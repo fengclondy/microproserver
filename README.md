@@ -19,7 +19,7 @@
 核心jar包，所有微服务均引用该包，使用AutoConfig实现免配置，模拟生产环境下spring-cloud的使用。
 
 ### eureka 注册中心
-端口：8761，/metadata端点实现metadata信息配置。
+端口：8761，/metadata.html端点实现metadata信息配置。灰度负载均衡设置。
 
 ### provider 服务提供者
 端口：18090，服务提供者，操作数据库接口。
