@@ -78,12 +78,6 @@ public class PayController {
     @Autowired
     private HttpServletRequest request;
 
-    @Value("${defaultPay}")
-    private BigDecimal defaultPay;
-
-    @Value("${atLeatValue}")
-    private BigDecimal atLeatValue;
-
     @Value("${notifyUrl}")
     public String notifyUrl;
 
@@ -107,6 +101,11 @@ public class PayController {
                     return JsonUtils.writeValueAsString(bacMap);
                 }
             }
+            Shop shop = shopMapper.getShopInfoBySid(sid);
+            //获取押金金额
+            BigDecimal defaultPay = shop.getDefaultPay();
+            //获取可直接支付差额
+            BigDecimal atLeatValue = shop.getAtLeatValue();
             if (defaultPay.subtract(user.getUsablemoney()).compareTo(atLeatValue) <= 0) {
                 // need pay 为0时，直接使用余额支付
                 //创建订单
@@ -124,7 +123,7 @@ public class PayController {
                 socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;STATIONID:" + sid + ";MAC:" + mac + ";ORDERID:" + orderid + ";COLORID:7;CABLE:" + cableType + ";\r\n");
             } else {
                 // 统一下单，生成预支付交易单
-                Map<String, Object> paramMap = createPrepayParam(openid, user.getUsablemoney());
+                Map<String, Object> paramMap = createPrepayParam(openid, user.getUsablemoney(),defaultPay);
                 String preOrderInfo = HttpRequest.sendPost(GlobalConfig.WX_UNIFIEDORDER_URL, WXPayUtil.map2Xml(paramMap, key));
                 //创建订单
                 createPreOrder(sid, cableType, user, paramMap.get("out_trade_no").toString(), 0);
@@ -181,6 +180,8 @@ public class PayController {
     private void createPreOrder(@RequestParam("sid") String sid, @RequestParam("cable_type") String cableType, User user, String orderid, Integer orderStatus) {
         Station station = stationMapper.getStationBySid(sid);
         Shop shop = shopMapper.getShopInfoBySid(sid);
+        //获取押金金额
+        BigDecimal defaultPay = shop.getDefaultPay();
         ShopStation shopStation = shopStationMapper.findShopStationIdBySid(sid);
         Order order = new Order();
         order.setCreatedBy("SYS:prepay");
@@ -209,7 +210,7 @@ public class PayController {
      * @param usablemoney
      * @return
      */
-    private Map<String, Object> createPrepayParam(String openid, BigDecimal usablemoney) {
+    private Map<String, Object> createPrepayParam(String openid, BigDecimal usablemoney,BigDecimal defaultPay) {
         Map<String, Object> paramMap = new LinkedHashMap<>();
         paramMap.put("appid", appID);
         paramMap.put("attach", "attach");

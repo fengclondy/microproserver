@@ -2,6 +2,7 @@ package com.ycb.wxxcx.provider.controller;
 
 import com.ycb.wxxcx.provider.cache.RedisService;
 import com.ycb.wxxcx.provider.mapper.OrderMapper;
+import com.ycb.wxxcx.provider.mapper.ShopMapper;
 import com.ycb.wxxcx.provider.mapper.StationMapper;
 import com.ycb.wxxcx.provider.mapper.UserMapper;
 import com.ycb.wxxcx.provider.service.FeeStrategyService;
@@ -11,7 +12,6 @@ import com.ycb.wxxcx.provider.vo.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -44,8 +44,8 @@ public class BorrowController {
     @Autowired
     private OrderMapper orderMapper;
 
-    @Value("${defaultPay}")
-    private BigDecimal defaultPay;
+    @Autowired
+    private ShopMapper shopMapper;
 
     @RequestMapping(value = "/getMachineInfo", method = RequestMethod.POST)
     @ResponseBody
@@ -67,6 +67,8 @@ public class BorrowController {
         String feeStr = feeStrategyService.transFeeStrategy(feeStrategy);
         Boolean exitOrder = orderMapper.findTodayOrder(Long.valueOf(sid), user.getId());
         try {
+            //获取押金金额
+            BigDecimal defaultPay = shopMapper.getShopDefaultPayInfoBySid(sid);
             data.put("sid", sid);
             data.put("tid", session);
             data.put("need_pay", feeStrategyService.calNeedPay(defaultPay, user.getUsablemoney()));//用户需支付金额
