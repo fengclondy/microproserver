@@ -43,7 +43,7 @@ public class ShopController {
         } catch (Exception e) {
             logger.error(e.getMessage());
             bacMap.put("data", null);
-            bacMap.put("code", 0);
+            bacMap.put("code", 5);
             bacMap.put("msg", "失败");
         }
         return JsonUtils.writeValueAsString(bacMap);
@@ -64,11 +64,10 @@ public class ShopController {
             bacMap.put("data", data);
             bacMap.put("code", 0);
             bacMap.put("msg", "成功");
-            // 根据openid检索数据库，不存在新建用户
         } catch (Exception e) {
             logger.error(e.getMessage());
             bacMap.put("data", null);
-            bacMap.put("code", 0);
+            bacMap.put("code", 5);
             bacMap.put("msg", "失败");
         }
         return JsonUtils.writeValueAsString(bacMap);

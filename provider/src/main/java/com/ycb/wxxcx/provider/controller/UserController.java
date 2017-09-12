@@ -69,7 +69,7 @@ public class UserController {
             } else {
                 String sessinKey = (String) loginInfoMap.get("session_key");
                 String openid = (String) loginInfoMap.get("openid");
-                Integer expiresIn = (Integer) loginInfoMap.get("expires_in");
+                Long expiresIn = Long.valueOf(loginInfoMap.get("expires_in").toString());
                 // 根据openid检索数据库，不存在新建用户
                 Integer optlock = this.userMapper.findByOpenid(openid);
                 if (optlock == null) {

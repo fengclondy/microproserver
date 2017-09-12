@@ -11,16 +11,16 @@ import org.apache.ibatis.annotations.Select;
 @Mapper
 public interface StationMapper {
     @Select("Select usable_battery From ycb_mcs_station s " +
-            "Where s.id = #{sid} ")
+            "Where s.sid = #{sid} ")
     String getUsableBatteries(@Param("sid") Long sid);
 
     @Select("Select mac From ycb_mcs_station s " +
-            "Where s.id = #{sid} ")
+            "Where s.sid = #{sid} ")
     String getStationMac(@Param("sid") Long sid);
 
-    @Select("SELECT s.id,s.title FROM ycb_mcs_station s WHERE s.id=#{sid}")
+    @Select("SELECT s.sid,s.title FROM ycb_mcs_station s WHERE s.sid=#{sid}")
     Station getStationBySid(String sid);
 
-    @Select("SELECT t.cable, t.borrow_station_id AS id, s.mac, t.customer FROM ycb_mcs_tradelog t,ycb_mcs_station s WHERE t.borrow_station_id=s.id AND t.orderid=#{outTradeNo}")
+    @Select("SELECT t.cable, t.borrow_station_id AS sid, s.mac, t.customer FROM ycb_mcs_tradelog t,ycb_mcs_station s WHERE t.borrow_station_id=s.sid AND t.orderid=#{outTradeNo}")
     Station getMacCableByOrderid(String outTradeNo);
 }

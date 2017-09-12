@@ -123,7 +123,7 @@ public class PayController {
                 socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;STATIONID:" + sid + ";MAC:" + mac + ";ORDERID:" + orderid + ";COLORID:7;CABLE:" + cableType + ";\r\n");
             } else {
                 // 统一下单，生成预支付交易单
-                Map<String, Object> paramMap = createPrepayParam(openid, user.getUsablemoney(),defaultPay);
+                Map<String, Object> paramMap = createPrepayParam(openid, user.getUsablemoney(), defaultPay);
                 String preOrderInfo = HttpRequest.sendPost(GlobalConfig.WX_UNIFIEDORDER_URL, WXPayUtil.map2Xml(paramMap, key));
                 //创建订单
                 createPreOrder(sid, cableType, user, paramMap.get("out_trade_no").toString(), 0);
@@ -197,7 +197,7 @@ public class PayController {
         order.setCustomer(user.getId());//用户id
         order.setBorrowShopId(shop.getId());
         order.setBorrowShopStationId(shopStation.getId());
-        order.setBorrowStationId(station.getId());
+        order.setBorrowStationId(station.getSid());
         order.setBorrowStationName(shop.getName());
         order.setBorrowCity(shop.getCity());
         orderMapper.saveOrder(order);
@@ -210,7 +210,7 @@ public class PayController {
      * @param usablemoney
      * @return
      */
-    private Map<String, Object> createPrepayParam(String openid, BigDecimal usablemoney,BigDecimal defaultPay) {
+    private Map<String, Object> createPrepayParam(String openid, BigDecimal usablemoney, BigDecimal defaultPay) {
         Map<String, Object> paramMap = new LinkedHashMap<>();
         paramMap.put("appid", appID);
         paramMap.put("attach", "attach");
@@ -274,7 +274,7 @@ public class PayController {
                     userMapper.updateUserDeposit(BigDecimal.valueOf(paid).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP), customer);
                     //根据订单查询MAC和CABLE
                     Station station = stationMapper.getMacCableByOrderid(outTradeNo);
-                    socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;STATIONID:" + station.getId() + ";MAC:" + station.getMac() + ";ORDERID:" + outTradeNo + ";COLORID:7;CABLE:" + station.getCable() + ";\r\n");
+                    socketService.SendCmd("ACT:borrow_battery;EVENT_CODE:1;STATIONID:" + station.getSid() + ";MAC:" + station.getMac() + ";ORDERID:" + outTradeNo + ";COLORID:7;CABLE:" + station.getCable() + ";\r\n");
                     logger.info("ORDERID:" + outTradeNo + "支付成功！");
                 }
                 // 告诉微信服务器，我收到信息了，不要在调用回调action了

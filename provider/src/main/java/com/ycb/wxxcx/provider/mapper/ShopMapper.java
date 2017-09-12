@@ -20,7 +20,7 @@ public interface ShopMapper {
     //            "And abs(ss.longitude - #{longitude}) < 50 ")
     @Select("Select *,ss.title name From ycb_mcs_shop_station ss " +
             "Left Join ycb_mcs_station s " +
-            "On ss.station_id = s.id " +
+            "On ss.station_id = s.sid " +
             "And abs(ss.latitude - #{latitude}) < 50 " +
             "And abs(ss.longitude - #{longitude}) < 50 ")
     @Results({
@@ -29,7 +29,7 @@ public interface ShopMapper {
     })
     List<ShopStation> findShops(@Param("latitude") String latitude, @Param("longitude") String longitude);
 
-    @Select("Select * From ycb_mcs_station s Where id = #{stationId} ")
+    @Select("Select * From ycb_mcs_station s Where s.sid = #{stationId} ")
     @Results(id = "station", value = {
             @Result(property = "id", column = "id"),
             @Result(property = "title", column = "title"),
@@ -57,7 +57,7 @@ public interface ShopMapper {
     BigDecimal getShopDefaultPayInfoBySid(String sid);
 
     @Select("Select * From ycb_mcs_shop shop, ycb_mcs_shop_station ss, ycb_mcs_station s " +
-            "Where ss.shopid = shop.id And ss.station_id = s.id " +
+            "Where ss.shopid = shop.id And ss.station_id = s.sid " +
             "AND ss.id = #{shopStationId}")
     @Results({
             @Result(property = "name", column = "shop.name"),

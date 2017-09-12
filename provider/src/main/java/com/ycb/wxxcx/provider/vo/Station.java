@@ -6,6 +6,8 @@ package com.ycb.wxxcx.provider.vo;
 public class Station {
     private Long id;
 
+    private Long sid;
+
     private String title;
 
     private Integer usable;
@@ -22,6 +24,14 @@ public class Station {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getSid() {
+        return sid;
+    }
+
+    public void setSid(Long sid) {
+        this.sid = sid;
     }
 
     public String getTitle() {

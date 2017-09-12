@@ -53,20 +53,20 @@ public class BorrowController {
                                  @RequestParam("qrcode") String qrcode) {
         Map<String, Object> bacMap = new HashMap<>();
         Map<String, Object> data = new HashMap<>();
-        User user = this.userMapper.findUserinfoByOpenid(redisService.getKeyValue(session));
-        // 解析qrcode，根据机器sid，获取机器状态属性值
-        String[] urlArr = qrcode.trim().toLowerCase().split("/");
-        String sid = urlArr[urlArr.length - 1];
-        String cable_type = stationMapper.getUsableBatteries(Long.valueOf(sid));
-        // 判断设备是否在线
-        String lastHearTime = redisService.getKeyValue(sid);
-        if (StringUtils.isEmpty(lastHearTime) || (new Date().getTime() / 1000 - Long.valueOf(lastHearTime)) > 60 * 5) {
-            cable_type = "{\"1\":\"0\",\"2\":\"0\",\"3\":\"0\"}";
-        }
-        FeeStrategy feeStrategy = feeStrategyService.findFeeStrategyByStation(Long.valueOf(sid));
-        String feeStr = feeStrategyService.transFeeStrategy(feeStrategy);
-        Boolean exitOrder = orderMapper.findTodayOrder(Long.valueOf(sid), user.getId());
         try {
+            User user = this.userMapper.findUserinfoByOpenid(redisService.getKeyValue(session));
+            // 解析qrcode，根据机器sid，获取机器状态属性值
+            String[] urlArr = qrcode.trim().toLowerCase().split("/");
+            String sid = urlArr[urlArr.length - 1];
+            String cable_type = stationMapper.getUsableBatteries(Long.valueOf(sid));
+            // 判断设备是否在线
+            String lastHearTime = redisService.getKeyValue(sid);
+            if (StringUtils.isEmpty(lastHearTime) || (new Date().getTime() / 1000 - Long.valueOf(lastHearTime)) > 60 * 5) {
+                cable_type = "{\"1\":\"0\",\"2\":\"0\",\"3\":\"0\"}";
+            }
+            FeeStrategy feeStrategy = feeStrategyService.findFeeStrategyByStation(Long.valueOf(sid));
+            String feeStr = feeStrategyService.transFeeStrategy(feeStrategy);
+            Boolean exitOrder = orderMapper.findTodayOrder(Long.valueOf(sid), user.getId());
             //获取押金金额
             BigDecimal defaultPay = shopMapper.getShopDefaultPayInfoBySid(sid);
             data.put("sid", sid);
@@ -83,8 +83,8 @@ public class BorrowController {
         } catch (Exception e) {
             logger.error(e.getMessage());
             bacMap.put("data", null);
-            bacMap.put("code", 0);
-            bacMap.put("msg", "失败");
+            bacMap.put("code", 5);
+            bacMap.put("msg", "session过期");
         }
         return JsonUtils.writeValueAsString(bacMap);
     }

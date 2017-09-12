@@ -50,7 +50,7 @@ public class MessageService {
                 String tokenInfo = HttpRequest.sendGet(GlobalConfig.WX_ACCESS_TOKEN_URL, param);
                 Map<String, Object> tokenInfoMap = JsonUtils.readValue(tokenInfo);
                 String accessToken = (String) tokenInfoMap.get("access_token");
-                Integer expiresIn = (Integer) tokenInfoMap.get("expires_in");
+                Long expiresIn = Long.valueOf(tokenInfoMap.get("expires_in").toString());
                 // 将accessToken存入Redis,存放时间为7200秒
                 redisService.setKeyValueTimeout("ACCESS_TOKEN", accessToken.trim(), expiresIn);
                 return accessToken;
