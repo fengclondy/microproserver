@@ -66,7 +66,18 @@ public class Order extends BaseEntity{
 //        // 报失 Lost
 //        L
 //    }
+    //信用借还的订单号
+    private String orderNo;
+    //资金流水号，用于商户与支付宝进行对账
+    private String alipayFundOrderNo;
 
+    public String getOrderNo(){ return orderNo; }
+
+    public void setOrderNo(String orderNo){ this.orderNo = orderNo; }
+
+    public String getAlipayFundOrderNo(){ return alipayFundOrderNo; }
+
+    public void setAlipayFundOrderNo(String alipayFundOrderNo){ this.alipayFundOrderNo = alipayFundOrderNo; }
 
     public String getOrderid() {
         return orderid;

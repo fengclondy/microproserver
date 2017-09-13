@@ -5,6 +5,7 @@ import com.ycb.wxxcx.provider.vo.ShopStation;
 import com.ycb.wxxcx.provider.vo.Station;
 import org.apache.ibatis.annotations.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -49,6 +50,11 @@ public interface ShopMapper {
             "FROM ycb_mcs_shop_station ss," +
             "ycb_mcs_shop s WHERE ss.shopid=s.id AND ss.station_id=#{sid}")
     Shop getShopInfoBySid(String sid);
+    //获取押金金额
+    @Select("SELECT s.defaultPay " +
+            "FROM ycb_mcs_shop_station ss," +
+            "ycb_mcs_shop s WHERE ss.shopid=s.id AND ss.station_id=#{sid}")
+    BigDecimal getShopDefaultPayInfoBySid(String sid);
 
     @Select("Select * From ycb_mcs_shop shop, ycb_mcs_shop_station ss, ycb_mcs_station s " +
             "Where ss.shopid = shop.id And ss.station_id = s.id " +

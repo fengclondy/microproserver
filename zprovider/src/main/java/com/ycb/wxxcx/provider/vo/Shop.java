@@ -1,5 +1,6 @@
 package com.ycb.wxxcx.provider.vo;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -13,6 +14,12 @@ public class Shop extends BaseEntity{
     //所在城市
     private String city;
 
+    //押金
+    private BigDecimal defaultPay;
+
+    //可直接支付差额
+    private BigDecimal atLeatValue;
+
     private List<Station> stationList;
 
     public String getName() {
@@ -22,6 +29,14 @@ public class Shop extends BaseEntity{
     public void setName(String name) {
         this.name = name;
     }
+
+    public BigDecimal getDefaultPay(){return defaultPay; }
+
+    public void setDefaultPay(){this.defaultPay = defaultPay; }
+
+    public BigDecimal getAtLeatValue(){return atLeatValue; }
+
+    public void setAtLeatValue(BigDecimal atLeatValue){this.atLeatValue = atLeatValue; }
 
     public List<Station> getStationList() {
         return stationList;
