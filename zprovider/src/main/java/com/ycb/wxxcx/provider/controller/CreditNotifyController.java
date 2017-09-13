@@ -5,10 +5,10 @@ import com.alipay.api.internal.util.AlipaySignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -21,7 +21,8 @@ import java.util.Map;
 /**
  * Created by Huo on 2017/9/13.
  */
-@Controller
+@RestController
+@RequestMapping("/notify")
 public class CreditNotifyController {
 
     /**
@@ -42,7 +43,7 @@ public class CreditNotifyController {
      * @return
      * @throws IOException
      */
-    @RequestMapping(value = "borrows/borrowNotifyTest.json", method = {RequestMethod.POST})
+    @RequestMapping(value = "/notifyTest.json", method = {RequestMethod.POST})
     public String index(ModelMap modelMap, HttpServletRequest request, HttpServletResponse response) throws IOException {
 
         //获取支付宝POST过来反馈信息
@@ -61,8 +62,6 @@ public class CreditNotifyController {
             params.put(name, valueStr);
         }
         //1、签名验证
-        //……
-
         //验证
 
         /**
@@ -96,7 +95,8 @@ public class CreditNotifyController {
                 //1、开通了普通即时到账，买家付款成功后。
                 //2、开通了高级即时到账，从该笔交易成功时间算起，过了签约时的可退款时限（如：三个月以内可退款、一年以内可退款等）后。
 
-               // out.println("success");    //请不要修改或删除
+                printResponse(response, "success");
+                // out.println("success");    //请不要修改或删除
             } else if ("ORDER_COMPLETE_NOTIFY".equals("TRADE_SUCCESS")) {
                 //判断该笔订单是否在商户网站中已经做过处理
                 //如果没有做过处理，根据订单号（out_trade_no）在商户网站的订单系统中查到该笔订单的详细，并执行商户的业务程序
@@ -105,16 +105,16 @@ public class CreditNotifyController {
                 //注意：
                 //该种交易状态只在一种情况下出现——开通了高级即时到账，买家付款成功后。
 
-               // out.println("success");    //请不要修改或删除
+                printResponse(response, "success");
+                // out.println("success");    //请不要修改或删除
             }
 
             //——请根据您的业务逻辑来编写程序（以上代码仅作参考）——
         } else {//
             return "fail";
         }
-        return  null;
+        return null;
     }
-
 
 
     //2、通知参数解析
@@ -126,8 +126,7 @@ public class CreditNotifyController {
     //……
 
     //4、向芝麻反馈处理是否成功
-   // printResponse(response, "success");
-
+    // printResponse(response, "success");
 
 
     protected void printResponse(HttpServletResponse response, String content) throws IOException {
