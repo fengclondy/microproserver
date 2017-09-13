@@ -21,4 +21,6 @@ public class GlobalConfig {
     //发送模板消息接口
     public static final String WX_SEND_TEMPLATE_MESSAGE = "https://api.weixin.qq.com/cgi-bin/message/wxopen/template/send";
 
+    //信用借还支付宝接口
+    public static final String Z_CREDIT_SERVER_URL = "https://openapi.alipay.com/gateway.do";
 }

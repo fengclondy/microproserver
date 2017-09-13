@@ -46,6 +46,8 @@ public interface OrderMapper {
             @Result(property = "returnTime", column = "returnTime"),
             @Result(property = "usefee", column = "usefee"),
             @Result(property = "paid", column = "paid"),
+            @Result(property = "orderNo", column = "order_no"),
+            @Result(property = "alipayFundOrderNo", column = "alipay_fund_order_no"),
             @Result(property = "duration", column = "duration"),
             @Result(property = "feeStrategy", column = "fee_settings", one = @One(select = "com.ycb.wxxcx.provider.mapper.FeeStrategyMapper.findFeeStrategy"))
     })
@@ -54,12 +56,17 @@ public interface OrderMapper {
     @Select("SELECT t.orderid,t.usefee,t.paid FROM ycb_mcs_tradelog t WHERE t.status=3 AND (t.paid-t.usefee)>0 AND t.customer = #{customer}")
     List<Order> findOrderListIdByUid(Long customer);
 
+    //通过订单编号查询在调用信用借还完结接口时的信息
+    //@Select("SELECT order_no from ycb_mcs_tradelog where orderid=#{orderid}")
+    //@Results(@Result(property = "orderNo", column = "order_no"))
+    //Order findOrderByOrderId(String orderid);
+
     @Insert("INSERT INTO ycb_mcs_tradelog(createdBy,createdDate,optlock," +
             "borrow_city,borrow_station_name,borrow_time,orderid,paid," +
             "platform,price,status,usefee,customer,borrow_shop_id,borrow_shop_station_id," +
-            "borrow_station_id,cable) VALUES(#{createdBy},#{createdDate},0,#{borrowCity}," +
+            "borrow_station_id,cable,order_no,alipay_fund_order_no) VALUES(#{createdBy},#{createdDate},0,#{borrowCity}," +
             "#{borrowStationName},#{borrowTime},#{orderid},#{paid},#{platform},#{price},#{status}," +
-            "#{usefee},#{customer},#{borrowShopId},#{borrowShopStationId},#{borrowStationId},#{cable})")
+            "#{usefee},#{customer},#{borrowShopId},#{borrowShopStationId},#{borrowStationId},#{cable},#{orderNo},#{alipayFundOrderNo})")
     void saveOrder(Order order);
 
     @Update("UPDATE ycb_mcs_tradelog SET " +
@@ -67,8 +74,20 @@ public interface OrderMapper {
             "lastModifiedDate=#{lastModifiedDate}, " +
             "status=#{status}, " +
             "paid=#{paid} " +
+            "order_no=#{orderNo} " +
+            "alipay_fund_order_no=#{alipayFundOrderNo} " +
             "WHERE orderid=#{orderid}")
     void updateOrderStatus(Order order);
+
+    //根据信用借还的订单号进行更新订单
+    @Update("UPDATE ycb_mcs_tradelog SET " +
+            "lastModifiedBy=#{lastModifiedBy}, " +
+            "lastModifiedDate=#{lastModifiedDate}, " +
+            "status=#{status}, " +
+            "paid=#{paid} " +
+            "alipay_fund_order_no=#{alipayFundOrderNo} " +
+            "WHERE order_no=#{orderNo}")
+    void updateOrderStatusByOrderNo(Order order);
 
     @Select("SELECT customer " +
             "FROM ycb_mcs_tradelog where orderid = #{orderid}")
@@ -79,6 +98,8 @@ public interface OrderMapper {
             "lastModifiedDate=NOW(), " +
             "refunded=#{refunded}, " +
             "status=#{status} " +
+            "order_no=#{orderNo} " +
+            "alipay_fund_order_no=#{alipayFundOrderNo} " +
             "WHERE orderid=#{orderid}")
     void updateOrderStatusToFour(Order order);
 
