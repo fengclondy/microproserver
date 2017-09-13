@@ -3,10 +3,7 @@ package com.tcb.wxxcx.consumer.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
 /**
@@ -29,6 +26,19 @@ public class ShopController {
         param.add("latitude", latitude);
         param.add("longitude", longitude);
         String result = restTemplate.postForObject("http://provider:18080/shop/getShopList", param, String.class);
+        return result;
+    }
+
+    // 获取商铺列表
+    @RequestMapping(value = "/getShopInfo", method = RequestMethod.POST)
+    @ResponseBody
+    // @Action --修改 为拦截器方式实现
+    public String query(@RequestParam("session") String session,
+                        @RequestParam("shop_id") Long shopid) {
+        MultiValueMap<String, Object> param = new LinkedMultiValueMap();
+        param.add("session", session);
+        param.add("shop_id", shopid);
+        String result = restTemplate.postForObject("http://provider:18080/shop/getShopInfo", param, String.class);
         return result;
     }
 }
