@@ -120,7 +120,4 @@ public class CreditUploadController {
         return null;
     }
 
-    public static void main(String[] args) {
-        System.out.println(Long.parseLong("1424007F25",16));
-    }
 }
