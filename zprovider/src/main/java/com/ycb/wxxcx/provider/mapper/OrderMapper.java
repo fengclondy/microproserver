@@ -46,6 +46,8 @@ public interface OrderMapper {
             @Result(property = "returnTime", column = "returnTime"),
             @Result(property = "usefee", column = "usefee"),
             @Result(property = "paid", column = "paid"),
+            @Result(property = "orderNo", column = "order_no"),
+            @Result(property = "alipayFundOrderNo", column = "alipay_fund_order_no"),
             @Result(property = "duration", column = "duration"),
             @Result(property = "feeStrategy", column = "fee_settings", one = @One(select = "com.ycb.wxxcx.provider.mapper.FeeStrategyMapper.findFeeStrategy"))
     })
@@ -54,12 +56,25 @@ public interface OrderMapper {
     @Select("SELECT t.orderid,t.usefee,t.paid FROM ycb_mcs_tradelog t WHERE t.status=3 AND (t.paid-t.usefee)>0 AND t.customer = #{customer}")
     List<Order> findOrderListIdByUid(Long customer);
 
+    //通过订单编号查询在调用信用借还完结接口时的信息
+    @Select("SELECT order_no,return_time,price,return_shop_id,borrow_time" +
+            " from ycb_mcs_tradelog " +
+            "WHERE orderid=#{orderid}")
+    @Results(value = {
+            @Result(property = "orderNo", column = "order_no"),
+            @Result(property = "returnTime", column = "return_time"),
+            @Result(property = "price", column = "price"),
+            @Result(property = "return_shop_id", column = "return_shop_id"),
+            @Result(property = "borrow_time", column = "borrow_time")
+    })
+    Order findOrderByOrderId(String orderid);
+
     @Insert("INSERT INTO ycb_mcs_tradelog(createdBy,createdDate,optlock," +
             "borrow_city,borrow_station_name,borrow_time,orderid,paid," +
             "platform,price,status,usefee,customer,borrow_shop_id,borrow_shop_station_id," +
-            "borrow_station_id,cable) VALUES(#{createdBy},#{createdDate},0,#{borrowCity}," +
+            "borrow_station_id,cable,order_no,alipay_fund_order_no) VALUES(#{createdBy},#{createdDate},0,#{borrowCity}," +
             "#{borrowStationName},#{borrowTime},#{orderid},#{paid},#{platform},#{price},#{status}," +
-            "#{usefee},#{customer},#{borrowShopId},#{borrowShopStationId},#{borrowStationId},#{cable})")
+            "#{usefee},#{customer},#{borrowShopId},#{borrowShopStationId},#{borrowStationId},#{cable},#{orderNo},#{alipayFundOrderNo})")
     void saveOrder(Order order);
 
     @Update("UPDATE ycb_mcs_tradelog SET " +
@@ -67,8 +82,28 @@ public interface OrderMapper {
             "lastModifiedDate=#{lastModifiedDate}, " +
             "status=#{status}, " +
             "paid=#{paid} " +
+            "order_no=#{orderNo} " +
+            "alipay_fund_order_no=#{alipayFundOrderNo} " +
             "WHERE orderid=#{orderid}")
     void updateOrderStatus(Order order);
+    //信用借还订单创建成功后，根据订单的id更改订单的状态
+    @Update("UPDATE ycb_mcs_tradelog SET " +
+            "lastModifiedBy=#{lastModifiedBy}, " +
+            "lastModifiedDate=#{lastModifiedDate}, " +
+            "status=#{status}, " +
+            "customer=#{customer}, " +
+            "WHERE orderid=#{orderid}")
+    void updateOrderStatusByOrderId(Order order);
+
+    //根据信用借还的订单号进行更新订单
+    @Update("UPDATE ycb_mcs_tradelog SET " +
+            "lastModifiedBy=#{lastModifiedBy}, " +
+            "lastModifiedDate=#{lastModifiedDate}, " +
+            "status=#{status}, " +
+            "paid=#{paid} " +
+            "alipay_fund_order_no=#{alipayFundOrderNo} " +
+            "WHERE order_no=#{orderNo}")
+    void updateOrderStatusByOrderNo(Order order);
 
     @Select("SELECT customer " +
             "FROM ycb_mcs_tradelog where orderid = #{orderid}")
@@ -79,6 +114,8 @@ public interface OrderMapper {
             "lastModifiedDate=NOW(), " +
             "refunded=#{refunded}, " +
             "status=#{status} " +
+            "order_no=#{orderNo} " +
+            "alipay_fund_order_no=#{alipayFundOrderNo} " +
             "WHERE orderid=#{orderid}")
     void updateOrderStatusToFour(Order order);
 
@@ -102,4 +139,18 @@ public interface OrderMapper {
             "AND DATE(borrow_time)=(SELECT CURDATE()) " +
             "AND customer = #{id}")
     Integer findUserOrderNum(User user);
+
+
+    //查询逾期未换的订单,即为信用借还订单，并且电池状态为借出状态
+    @Select("SELECT t.borrow_time,t.order_no,t.borrow_station_id " +
+            "FROM ycb_mcs_tradelog t " +
+            "WHERE t.platform=2 AND t.status=2")
+    @Results(value = {
+            @Result(property = "borrowTime", column = "borrow_time"),
+            @Result(property = "orderNo", column = "order_no"),
+            @Result(property = "borrowShopStationId", column = "borrow_station_id")}
+    )
+    List<Order> findOverdueOrders();
+
+
 }
