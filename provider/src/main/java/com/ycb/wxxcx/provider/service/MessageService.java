@@ -43,7 +43,7 @@ public class MessageService {
     private String appSecret;
 
     public String getAccessToken() throws Exception {
-        String ACCESS_TOKEN = redisService.getKeyValue("ACCESS_TOKEN").trim();
+        String ACCESS_TOKEN = redisService.getKeyValue("ACCESS_TOKEN");
         if (StringUtils.isEmpty(ACCESS_TOKEN)) {
             String param = "grant_type=client_credential&appid=" + appID + "&secret=" + appSecret;
             try {
