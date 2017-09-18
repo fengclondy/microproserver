@@ -49,17 +49,17 @@ public class MessageService {
             try {
                 String tokenInfo = HttpRequest.sendGet(GlobalConfig.WX_ACCESS_TOKEN_URL, param);
                 Map<String, Object> tokenInfoMap = JsonUtils.readValue(tokenInfo);
-                String accessToken = (String) tokenInfoMap.get("access_token");
+                String accessToken = tokenInfoMap.get("access_token").toString();
                 Long expiresIn = Long.valueOf(tokenInfoMap.get("expires_in").toString());
                 // 将accessToken存入Redis,存放时间为7200秒
                 redisService.setKeyValueTimeout("ACCESS_TOKEN", accessToken.trim(), expiresIn);
-                return accessToken;
+                return accessToken.trim();
             } catch (Exception e) {
                 logger.error(e.getMessage());
                 return null;
             }
         } else {
-            return ACCESS_TOKEN;
+            return ACCESS_TOKEN.trim();
         }
     }
 
@@ -92,9 +92,9 @@ public class MessageService {
             String token = this.getAccessToken();
             String msgUrl = GlobalConfig.WX_SEND_TEMPLATE_MESSAGE + "?access_token=" + token;
             String msgResult = HttpRequest.sendPost(msgUrl, data);  //发送post请求
-            if (StringUtils.isEmpty(msgResult)){
+            if (StringUtils.isEmpty(msgResult)) {
                 logger.info("模板消息发送失败REFUNDID=: " + refundId);
-            }else {
+            } else {
                 Map<String, Object> msgResultMap = JsonUtils.readValue(msgResult);
                 Integer errcode = (Integer) msgResultMap.get("errcode");
                 String errmsg = (String) msgResultMap.get("errmsg");
