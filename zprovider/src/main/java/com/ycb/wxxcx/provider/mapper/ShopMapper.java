@@ -25,7 +25,7 @@ public interface ShopMapper {
             "And abs(ss.longitude - #{longitude}) < 50 ")
     @Results({
             @Result(property = "name", column = "name"),
-            @Result(property = "shopStation", column = "station_id", many = @Many(select = "com.ycb.wxxcx.provider.mapper.ShopMapper.findStations"))
+            @Result(property = "shopStation", column = "station_id", many = @Many(select = "ShopMapper.findStations"))
     })
     List<ShopStation> findShops(@Param("latitude") String latitude, @Param("longitude") String longitude);
 
@@ -68,7 +68,14 @@ public interface ShopMapper {
             @Result(property = "phone", column = "shop.phone"),
             @Result(property = "stime", column = "shop.stime"),
             @Result(property = "etime", column = "shop.etime"),
-            @Result(property = "shopStation", column = "station_id", many = @Many(select = "com.ycb.wxxcx.provider.mapper.ShopMapper.findStations"))
+            @Result(property = "shopStation", column = "station_id", many = @Many(select = "ShopMapper.findStations"))
     })
     ShopStation findShopInfo(@Param("shopStationId") Long shopStationId);
+
+    //根据店铺的id查询店铺信息
+    @Select("Select name From ycb_mcs_shop shop where shop.id = #{shopId}")
+    @Results(value = {
+            @Result(property = "name",column = "name")
+    })
+    Shop findShopById(@Param("shopId") Long shopId);
 }

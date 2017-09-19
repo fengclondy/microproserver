@@ -70,7 +70,7 @@ public class CreditCompleteOrderController {
     @RequestMapping(value = "/restore", method = RequestMethod.POST)
     @ResponseBody
     //orderid   订单编号，是在创建信用借还订单的时候商家创建的订单编号
-    public void query(@RequestParam("orderid") String orderid) {
+    public void CompleteOrder(@RequestParam("orderid") String orderid) {
         AlipayClient alipayClient = new DefaultAlipayClient(GlobalConfig.Z_CREDIT_SERVER_URL, appId, privateKey,
                 format, charset, alipayPublicKey, signType);
         ZhimaMerchantOrderRentCompleteRequest request = new ZhimaMerchantOrderRentCompleteRequest();
@@ -88,10 +88,12 @@ public class CreditCompleteOrderController {
          */
         String payAmountType = "RENT";
         //支付金额	100.00
-        //payAmount 需要支付的金额,需要将传入的金额进行转换
-        String payAmount = order.getPrice().toString();
+        //payAmount 需要支付的金额
+        String payAmount = order.getUsefee().toString();
         //restoreShopName 物品归还门店名称,例如肯德基文三路门店
-        String restoreShopName = shopMapper.findShopInfo(order.getReturnShopId()).getName();
+        Long returnShopId = order.getReturnShopId();
+        Shop shopInfo = shopMapper.findShopById(returnShopId);
+        String restoreShopName = shopInfo.getName();
 
         request.setBizContent("{" +
                 "\"order_no\":\"" + orderNo + "\"," +
@@ -255,8 +257,9 @@ public class CreditCompleteOrderController {
     }
 
 
-    //第一次延迟0秒执行，当执行完后，每隔fixedDelay（毫秒）执行一次
-    @Scheduled(initialDelay = 0, fixedDelay = 43200000)
+    //每隔fixedDelay（毫秒）执行一次
+//    @Scheduled(fixedRate = 43200000)
+    @Scheduled(fixedRate = 200000000)
     public void dealWithOverdueUsers() {
 
         AlipayClient alipayClient = new DefaultAlipayClient(GlobalConfig.Z_CREDIT_SERVER_URL, appId, privateKey,
@@ -282,7 +285,7 @@ public class CreditCompleteOrderController {
             //用开始租借的时间加上最长时长
             long l = borrowTime.getTime() + maxFeeTime * maxFeeUnit * 1000;
             //判断用户是否逾期未归还
-            if (l > new Date().getTime()) {
+            if (l < new Date().getTime()) {
                 //向支付宝发送完结订单的请求
                 sendCompleteOverdueRequest(order);
             }
@@ -363,6 +366,5 @@ public class CreditCompleteOrderController {
         orderMapper.updateOrderStatusByOrderNo(order);
 
     }
-
 
 }

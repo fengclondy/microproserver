@@ -246,4 +246,33 @@ public class Order extends BaseEntity{
     public void setReturnStationId(Long returnStationId) {
         this.returnStationId = returnStationId;
     }
+
+    @Override
+    public String toString() {
+        return "Order{" +
+                "orderid='" + orderid + '\'' +
+                ", status=" + status +
+                ", borrowCity='" + borrowCity + '\'' +
+                ", borrowStationName='" + borrowStationName + '\'' +
+                ", borrowTime=" + borrowTime +
+                ", platform=" + platform +
+                ", paid=" + paid +
+                ", usefee=" + usefee +
+                ", price=" + price +
+                ", refunded=" + refunded +
+                ", cable=" + cable +
+                ", returnCity='" + returnCity + '\'' +
+                ", returnStationName='" + returnStationName + '\'' +
+                ", returnTime=" + returnTime +
+                ", customer=" + customer +
+                ", borrowShopId=" + borrowShopId +
+                ", borrowShopStationId=" + borrowShopStationId +
+                ", borrowStationId=" + borrowStationId +
+                ", returnShopId=" + returnShopId +
+                ", returnShopStationId=" + returnShopStationId +
+                ", returnStationId=" + returnStationId +
+                ", orderNo='" + orderNo + '\'' +
+                ", alipayFundOrderNo='" + alipayFundOrderNo + '\'' +
+                '}';
+    }
 }

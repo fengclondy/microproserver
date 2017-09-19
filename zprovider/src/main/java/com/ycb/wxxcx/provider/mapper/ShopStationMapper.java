@@ -33,4 +33,17 @@ public interface ShopStationMapper {
             @Result(property = "maxFee", column = "max_fee")
     })
     FeeStrategy findFeeStrategyByStation(Long stationid);
+
+    //根据商铺的id查询商铺信息为了上传商铺信息使用
+    @Select("select ss.longitude,ss.latitude,ss.address,s.stime,s.etime,s.phone,s.id from ycb_mcs_shop s,ycb_mcs_shop_station ss WHERE s.id = ss.shopid AND s.id = #{id}")
+    @Results(value = {
+            @Result(property = "longitude",column = "longitude"),
+            @Result(property = "latitude",column = "latitude"),
+            @Result(property = "address",column = "address"),
+            @Result(property = "stime",column = "stime"),
+            @Result(property = "etime",column = "etime"),
+            @Result(property = "phone",column = "phone"),
+            @Result(property = "id",column = "id")
+    })
+    ShopStation findShopStationById(@Param("id") Long id);
 }

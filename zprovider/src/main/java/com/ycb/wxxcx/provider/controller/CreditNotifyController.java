@@ -1,9 +1,17 @@
 package com.ycb.wxxcx.provider.controller;
 
 import com.alipay.api.AlipayApiException;
+import com.alipay.api.AlipayClient;
+import com.alipay.api.DefaultAlipayClient;
 import com.alipay.api.internal.util.AlipaySignature;
+import com.alipay.api.request.ZhimaMerchantOrderRentQueryRequest;
+import com.alipay.api.response.ZhimaMerchantOrderRentQueryResponse;
+import com.ycb.wxxcx.provider.constant.GlobalConfig;
+import com.ycb.wxxcx.provider.mapper.OrderMapper;
+import com.ycb.wxxcx.provider.vo.Order;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,6 +22,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -31,9 +40,28 @@ public class CreditNotifyController {
     private static final Logger logger = LoggerFactory
             .getLogger(CreditNotifyController.class);
 
+    //初始化alipayClient用到的参数:该appId必须设为开发者自己的生活号id
+    @Value("${appId}")
+    private String appId;
+    //初始化alipayClient用到的参数:该私钥为测试账号私钥  开发者必须设置自己的私钥,否则会存在安全隐患
+    @Value("${privateKey}")
+    private String privateKey;
+    //初始化alipayClient用到的参数:仅支持JSON
+    @Value("${format}")
+    private String format;
+    //初始化alipayClient用到的参数:字符编码-传递给支付宝的数据编码
+    @Value("${charset}")
+    private String charset;
     //初始化alipayClient用到的参数:该公钥为测试账号公钥,开发者必须设置自己的公钥 ,否则会存在安全隐患
     @Value("${alipayPublicKey}")
     private String alipayPublicKey;
+    //初始化alipayClient用到的参数:签名类型
+    @Value("${signType}")
+    private String signType;
+
+
+    @Autowired
+    private OrderMapper orderMapper;
 
     /**
      * 异步通知请求入口.
@@ -43,7 +71,7 @@ public class CreditNotifyController {
      * @return
      * @throws IOException
      */
-    @RequestMapping(value = "/notifyTest.json", method = {RequestMethod.POST})
+    @RequestMapping(value = "/notify", method = {RequestMethod.POST})
     public String index(ModelMap modelMap, HttpServletRequest request, HttpServletResponse response) throws IOException {
 
         //获取支付宝POST过来反馈信息
@@ -85,50 +113,78 @@ public class CreditNotifyController {
             //ORDER_COMPLETE_NOTIFY (订单完结异步事件)
             String notifyType = params.get("notify_type");
 
+            //因为是在用户点击借用按钮的时候创建的订单，所以不需要处理订单创建完结事件
             if ("ORDER_CREATE_NOTIFY".equals(notifyType)) {
-                //判断该笔订单是否在商户网站中已经做过处理
-                //如果没有做过处理，根据订单号（out_trade_no）在商户网站的订单系统中查到该笔订单的详细，并执行商户的业务程序
-                //如果有做过处理，不执行商户的业务程序
-
-                //注意：
-                //该种交易状态只在两种情况下出现
-                //1、开通了普通即时到账，买家付款成功后。
-                //2、开通了高级即时到账，从该笔交易成功时间算起，过了签约时的可退款时限（如：三个月以内可退款、一年以内可退款等）后。
-
+                //返回 success
                 printResponse(response, "success");
-                // out.println("success");    //请不要修改或删除
-            } else if ("ORDER_COMPLETE_NOTIFY".equals("TRADE_SUCCESS")) {
-                //判断该笔订单是否在商户网站中已经做过处理
-                //如果没有做过处理，根据订单号（out_trade_no）在商户网站的订单系统中查到该笔订单的详细，并执行商户的业务程序
-                //如果有做过处理，不执行商户的业务程序
-
-                //注意：
-                //该种交易状态只在一种情况下出现——开通了高级即时到账，买家付款成功后。
-
-                printResponse(response, "success");
-                // out.println("success");    //请不要修改或删除
             }
+            //处理订单完结异步通知
+            if ("ORDER_COMPLETE_NOTIFY".equals(notifyType)) {
+                //判断该笔订单是否在商户网站中已经做过处理
+                //如果没有做过处理，根据订单号（out_trade_no）在商户网站的订单系统中查到该笔订单的详细，并执行商户的业务程序
+                //如果有做过处理，不执行商户的业务程序
+                //信用借还平台订单号 芝麻信用借还平台生成的订单号
+                String orderNo = params.get("order_no");
+                //外部商户订单号 外部商户生成的订单号，与芝麻信用借还平台生成的订单号存在关联关系
+                String outOrderNo = params.get("out_order_no");
 
-            //——请根据您的业务逻辑来编写程序（以上代码仅作参考）——
+                Order order = orderMapper.findOrderByOrderId(outOrderNo);
+                //因为在用户点击后就生成这个订单，所以这个订单一定存在
+                //当订单的流水编号不存在时
+                if (null == order.getAlipayFundOrderNo() || "".equals(order.getAlipayFundOrderNo())) {
+                    AlipayClient alipayClient = new DefaultAlipayClient(GlobalConfig.Z_CREDIT_SERVER_URL,
+                            appId, privateKey, format, charset, alipayPublicKey,
+                            signType);
+                    ZhimaMerchantOrderRentQueryRequest zhimaMerchantOrderRentQueryRequest = new ZhimaMerchantOrderRentQueryRequest();
+                    //外部订单号，需要唯一，由商户传入，芝麻内部会做幂等控制，格式为：yyyyMMddHHmmss+随机数	2016100100000xxxx
+                    //String outOrderNo="";
+                    //信用借还的产品码:w1010100000000002858
+                    String productCode = "w1010100000000002858";
+                    zhimaMerchantOrderRentQueryRequest.setBizContent("{" +
+                            "\"out_order_no\":\"" + outOrderNo + "\"," +
+                            "\"product_code\":\"" + productCode + "\"" +
+                            "  }");
+                    ZhimaMerchantOrderRentQueryResponse ZhimaResponse = null;
+                    try {
+                        ZhimaResponse = alipayClient.execute(zhimaMerchantOrderRentQueryRequest);
+                    } catch (AlipayApiException e) {
+                        e.printStackTrace();
+                    }
+                    if (ZhimaResponse.isSuccess()) {
+                        System.out.println("调用成功");
+
+                        //向ycb_mcs_tradelog中存入数据
+                        Order updateorder = new Order();
+
+                        //借用人支付宝userId.	例如2088202924240029
+                        String responseUserId = ZhimaResponse.getUserId();
+                        //信用借还的订单号,例如100000
+                        String responseOrderNo = ZhimaResponse.getOrderNo();
+                        //资金流水号，用于商户与支付宝进行对账	2088000000000000
+                        String responseAlipayFundOrderNo = ZhimaResponse.getAlipayFundOrderNo();
+
+                        updateorder.setLastModifiedBy("SYS:completecreditpay");
+                        updateorder.setLastModifiedDate(new Date());
+
+                        //因为这里只返回了信用借还的订单号，所以需要根据信用借还的订单号进行更新订单
+                        updateorder.setOrderNo(responseOrderNo);
+                        updateorder.setAlipayFundOrderNo(responseAlipayFundOrderNo);
+
+                        orderMapper.updateOrderStatusByOrderNo(updateorder);
+                    } else {
+                        System.out.println("调用失败");
+                    }
+                }
+                //返回 success
+                printResponse(response, "success");
+            }
         } else {//
             return "fail";
         }
         return null;
     }
 
-
-    //2、通知参数解析
-//    Map<String, String[]> notifyParams = request.getParameterMap();
-//    String notifyParamStr = JSONObject.toJSONString(notifyParams);
-//        LoggerUtil.warn(logger,"异步通知:"+notifyParamStr);
-
-    //3、执行业务逻辑
-    //……
-
-    //4、向芝麻反馈处理是否成功
-    // printResponse(response, "success");
-
-
+    //返回 success
     protected void printResponse(HttpServletResponse response, String content) throws IOException {
         PrintWriter writer = null;
         try {
