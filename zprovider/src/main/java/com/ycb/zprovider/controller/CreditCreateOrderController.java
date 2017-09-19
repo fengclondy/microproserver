@@ -87,7 +87,7 @@ public class CreditCreateOrderController {
     //sid   设备id
     //cableType 数据线类型
     //session   用户的session，去redis中进行比对查询
-    public void CreateOrder(@RequestParam("sid") String sid, @RequestParam("cable_type") String cableType, @RequestParam("session") String session) {
+    public void createOrder(@RequestParam("sid") String sid, @RequestParam("cable_type") String cableType, @RequestParam("session") String session) {
         AlipayClient alipayClient = new DefaultAlipayClient(GlobalConfig.Z_CREDIT_SERVER_URL,
                 appId, privateKey, format, charset, alipayPublicKey,
                 signType);
