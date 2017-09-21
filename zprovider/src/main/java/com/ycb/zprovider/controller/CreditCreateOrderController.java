@@ -14,7 +14,6 @@ import com.ycb.zprovider.constant.GlobalConfig;
 import com.ycb.zprovider.mapper.*;
 import com.ycb.zprovider.service.FeeStrategyService;
 import com.ycb.zprovider.service.SocketService;
-import com.ycb.zprovider.utils.JsonUtils;
 import com.ycb.zprovider.vo.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,8 +25,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
 
 /**
@@ -87,7 +84,7 @@ public class CreditCreateOrderController {
     //sid   设备id
     //cableType 数据线类型
     //session   用户的session，去redis中进行比对查询
-    public void CreateOrder(@RequestParam("sid") String sid, @RequestParam("cable_type") String cableType, @RequestParam("session") String session) {
+    public void createOrder(@RequestParam("sid") String sid, @RequestParam("cable_type") String cableType, @RequestParam("session") String session) {
         AlipayClient alipayClient = new DefaultAlipayClient(GlobalConfig.Z_CREDIT_SERVER_URL,
                 appId, privateKey, format, charset, alipayPublicKey,
                 signType);
@@ -97,15 +94,7 @@ public class CreditCreateOrderController {
         //回调到商户的url地址
         //商户在组装订单创建https请求时，会附带invoke_return_url参数，当用户完成借用准入及资金处理后，
         // 在借用完成页面会自动回调到商户提供的invoke_return_url地址链接，目前商户链接跳转是通过自动跳转的方式实现。
-        String invokeReturnUrl = "";
-        /*
-        商户请求状态上下文。商户发起借用服务时，需要在借用结束后返回给商户的参数，格式：json
-        商户发起借用服务时，一笔订单调用请求的上下文参数信息，创建成功后原参数返回，如果没有可不传。
-         */
-        Map<String, Object> map = new HashMap<>();
-        map.put("sid", sid);
-        map.put("cableType", cableType);
-        String invokeState = JsonUtils.writeValueAsString(map);
+        String invokeReturnUrl = "http://www.duxinyuan.top/return_url.html";
 
         //下面的代码用来生成外部订单号，就是商户自己的订单号
         String date = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
@@ -215,8 +204,6 @@ public class CreditCreateOrderController {
         request.setBizContent("{" +
                 "\"invoke_type\":\"WINDOWS\"," +
                 "\"invoke_return_url\":\"" + invokeReturnUrl + "\"," +
-                //"\"notify_url\":\"废弃，使用蚂蚁开放平台应用中的网关地址\"," +
-                "\"invoke_state\":\"" + invokeState + "\"," +
                 "\"out_order_no\":\"" + outOrderNo + "\"," +
                 "\"product_code\":\"" + productCode + "\"," +
                 "\"goods_name\":\"" + goodsName + "\"," +
@@ -225,27 +212,23 @@ public class CreditCreateOrderController {
                 "\"rent_amount\":\"" + rentAmount + "\"," +
                 "\"deposit_amount\":\"" + depositAmount + "\"," +
                 "\"deposit_state\":\"" + depositState + "\"," +
-                //"\"borrow_cycle\":\"\"," +
-                //"\"borrow_cycle_unit\":\"HOUR\"," +
                 "\"borrow_shop_name\":\"" + borrowShopName + "\"," +
                 "\"name\":\"" + name + "\"," +
                 "\"cert_no\":\"" + certNo + "\"," +
                 "\"rent_settle_type\":\"" + rentSettleType + "\"," +
                 "\"borrow_time\":\"" + borrowTime + "\"," +
-                "\"expiry_time\":\"" + expiryTime + "\"," +
-                "\"mobile_no\":\"" + mobileNo + "\"," +
-                "\"address\":\"" + address + "\"" +
+                "\"expiry_time\":\"" + expiryTime +
                 "  }");
         ZhimaMerchantOrderRentCreateResponse response = null;
         try {
-            response = alipayClient.execute(request);
+            response = alipayClient.pageExecute(request);
         } catch (AlipayApiException e) {
             e.printStackTrace();
         }
         if (response.isSuccess()) {
             System.out.println("调用成功，信用借还订单创建成功");
             //更新订单
-            updateOrder(response);
+            updateOrder(response,sid,cableType);
 
         } else {
             System.out.println("调用失败");
@@ -258,16 +241,9 @@ public class CreditCreateOrderController {
     /*
     当调用支付宝的创建信用借还订单接口成功时，更新订单的状态，弹出电池，弹出成功，
      */
-    private void updateOrder(ZhimaMerchantOrderRentCreateResponse response) {
-        //商户发起借用服务时，需要在借用结束后返回给商户的参数
-        String responseInvokeState = response.getInvokeState();
-        Map<String, Object> responseMap = JsonUtils.readValue(responseInvokeState);
-        //获取到设备的sid
-        String responseSid = (String) responseMap.get("sid");
+    private void updateOrder(ZhimaMerchantOrderRentCreateResponse response, String responseSid, String responseCableType) {
         //芝麻信用借还订单号
         String responseOrderNo = response.getOrderNo();
-        //获取之前用户选择的数据线类型
-        String responseCableType = (String) responseMap.get("cableType");
         //获取设备的mac，在弹出电池时会使用
         String mac = stationMapper.getStationMac(Long.valueOf(responseSid));
 
@@ -279,14 +255,6 @@ public class CreditCreateOrderController {
         order.setCreatedBy("SYS:updatecreditpay");
         order.setCreatedDate(new Date());
         order.setStatus(1);//支付状态,0为未支付，1为已经支付
-        //在创建订单的时候从redis中根据传入的session查到的值到数据库中查到用户的openid，因此这里就不用再解析用户的编号了
-        //支付宝给出的示例："user_id":"2088202924240029"
-        //数据库中该字段的属性：`customer` bigint(20) NOT NULL,
-//        try {
-//            order.setCustomer(Long.parseLong(responseUserId));//用户id
-//        } catch (NumberFormatException e) {
-//            System.out.println("支付宝返回的用户id转换为数字失败");
-//        }
         order.setOrderNo(responseOrderNo);
         //弹出电池
         try {
