@@ -20,8 +20,6 @@ public class CreditQueryOrderController {
 
     public static final Logger logger = LoggerFactory.getLogger(CreditQueryOrderController.class);
     //初始化alipayClient用到的参数:支付宝网关
-    @Value("${serverUrl}")
-    private String serverUrl;
     //初始化alipayClient用到的参数:该appId必须设为开发者自己的生活号id
     @Value("${appId}")
     private String appId;
@@ -46,7 +44,7 @@ public class CreditQueryOrderController {
     //outOrderNo 外部订单号，需要唯一，由商户传入，芝麻内部会做幂等控制，格式为：yyyyMMddHHmmss+随机数	2016100100000xxxx
     public String query(@RequestParam("outOrderNo") String outOrderNo) {
 
-        AlipayClient alipayClient = new DefaultAlipayClient(serverUrl, appId, privateKey, format, charset, alipayPublicKey, signType);
+        AlipayClient alipayClient = new DefaultAlipayClient(GlobalConfig.Z_CREDIT_SERVER_URL, appId, privateKey, format, charset, alipayPublicKey, signType);
         ZhimaMerchantOrderRentQueryRequest request = new ZhimaMerchantOrderRentQueryRequest();
         //信用借还的产品码:w1010100000000002858
         String productCode = GlobalConfig.Z_PRODUCT_CODE;
@@ -57,7 +55,7 @@ public class CreditQueryOrderController {
                 "  }");
         ZhimaMerchantOrderRentQueryResponse response = null;
         try {
-            response = alipayClient.execute(request);
+            response = alipayClient.pageExecute(request);
         } catch (AlipayApiException e) {
             e.printStackTrace();
         }

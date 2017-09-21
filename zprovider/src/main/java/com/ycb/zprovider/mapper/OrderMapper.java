@@ -159,7 +159,9 @@ public interface OrderMapper {
     @Select("SELECT orderid,customer from ycb_mcs_tradelog WHERE order_no = #{orderNo}")
     @Results(value = {
             @Result(property = "orderid", column = "orderid"),
-            @Result(property = "customer", column = "customer")
+            @Result(property = "customer", column = "customer"),
+            @Result(property = "borrowStationId", column = "borrow_station_id"),
+            @Result(property = "cable", column = "cable"),
     })
     Order findOrderByOrderNo(String orderNo);
 }
