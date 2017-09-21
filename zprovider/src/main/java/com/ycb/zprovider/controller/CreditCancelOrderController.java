@@ -19,8 +19,6 @@ import org.springframework.web.bind.annotation.*;
 public class CreditCancelOrderController {
     public static final Logger logger = LoggerFactory.getLogger(CreditCancelOrderController.class);
     //初始化alipayClient用到的参数:支付宝网关
-    @Value("${serverUrl}")
-    private String serverUrl;
     //初始化alipayClient用到的参数:该appId必须设为开发者自己的生活号id
     @Value("${appId}")
     private String appId;
@@ -44,7 +42,7 @@ public class CreditCancelOrderController {
     @ResponseBody
     //orderNo 信用借还订单号
     public String query(@RequestParam("orderNo") String orderNo) {
-        AlipayClient alipayClient = new DefaultAlipayClient(serverUrl, appId, privateKey, format, charset, alipayPublicKey, signType);
+        AlipayClient alipayClient = new DefaultAlipayClient(GlobalConfig.Z_CREDIT_SERVER_URL, appId, privateKey, format, charset, alipayPublicKey, signType);
         ZhimaMerchantOrderRentCancelRequest request = new ZhimaMerchantOrderRentCancelRequest();
         //信用借还的产品码:w1010100000000002858
         String productCode = GlobalConfig.Z_PRODUCT_CODE;
@@ -62,6 +60,7 @@ public class CreditCancelOrderController {
         if (response.isSuccess()) {
             System.out.println("调用成功");
             System.out.println("订单取消" + response.getMsg());
+            System.out.println(response.getBody());
         } else {
             System.out.println("调用失败");
         }

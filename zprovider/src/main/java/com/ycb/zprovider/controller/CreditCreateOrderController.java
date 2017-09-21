@@ -3,12 +3,15 @@ package com.ycb.zprovider.controller;
 import com.alipay.api.AlipayApiException;
 import com.alipay.api.AlipayClient;
 import com.alipay.api.DefaultAlipayClient;
+import com.alipay.api.internal.util.AlipaySignature;
 import com.alipay.api.request.AlipayOpenPublicMessageSingleSendRequest;
 import com.alipay.api.request.ZhimaMerchantOrderRentCancelRequest;
 import com.alipay.api.request.ZhimaMerchantOrderRentCreateRequest;
+import com.alipay.api.request.ZhimaMerchantOrderRentQueryRequest;
 import com.alipay.api.response.AlipayOpenPublicMessageSingleSendResponse;
 import com.alipay.api.response.ZhimaMerchantOrderRentCancelResponse;
 import com.alipay.api.response.ZhimaMerchantOrderRentCreateResponse;
+import com.alipay.api.response.ZhimaMerchantOrderRentQueryResponse;
 import com.ycb.zprovider.cache.RedisService;
 import com.ycb.zprovider.constant.GlobalConfig;
 import com.ycb.zprovider.mapper.*;
@@ -19,13 +22,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Random;
+import java.util.*;
 
 /**
  * Created by Huo on 2017/9/8.
@@ -221,15 +227,14 @@ public class CreditCreateOrderController {
                 "  }");
         ZhimaMerchantOrderRentCreateResponse response = null;
         try {
-            response = alipayClient.pageExecute(request);
+            response = alipayClient.pageExecute(request, "GET"); // 这里一定要用GET模式
+            String url = response.getBody(); // 从body中获取url
+            System.out.println("generateRentUrl url:" + url);
         } catch (AlipayApiException e) {
             e.printStackTrace();
         }
         if (response.isSuccess()) {
             System.out.println("调用成功，信用借还订单创建成功");
-            //更新订单
-            updateOrder(response,sid,cableType);
-
         } else {
             System.out.println("调用失败");
 
@@ -239,11 +244,235 @@ public class CreditCreateOrderController {
     }
 
     /*
+    当用户发起借用的请求的时候，生成订单存储到数据库中，
+     */
+    private void createPreOrder(String outOrderNo, String sid, String cableType, String session) {
+        //根据session从redis中查询用户的open_id
+        String openid = redisService.getKeyValue(session);
+        User user = this.userMapper.findUserinfoByOpenid(openid);
+
+        //向ycb_mcs_tradelog中存入数据
+        Order order = new Order();
+        //设置用户编号
+        order.setCustomer(user.getId());
+        order.setCreatedBy("SYS:createcreditpay");
+        order.setCreatedDate(new Date());
+        //设置租借时间
+        order.setBorrowTime(new Date());
+        //设置订单编号，为商户自己的订单编号，格式为yyyyMMddHHmmss+4位随机数
+        order.setOrderid(outOrderNo);//订单编号
+        order.setPlatform(2);//平台(信用借还)
+        //根据sid查询设备所在店铺的信息
+        Shop responseShop = shopMapper.getShopInfoBySid(sid);
+        order.setPrice(responseShop.getDefaultPay());//商品价格(元)，从数据库中查询押金defaultPay
+        order.setPaid(BigDecimal.ZERO);//已支付的费用
+        order.setUsefee(BigDecimal.ZERO);//产生的费用
+
+        order.setCable(Integer.valueOf(cableType));
+        order.setStatus(0);//支付状态,0为未支付，1为已经支付
+        order.setBorrowShopId(responseShop.getId());
+        //根据返回来的sid，查询到设备所在商铺的信息，和设备的信息
+        ShopStation shopStation = shopStationMapper.findShopStationIdBySid(sid);
+        Station station = stationMapper.getStationBySid(sid);
+        order.setBorrowShopStationId(shopStation.getId());
+        order.setBorrowStationId(station.getId());
+        //设置租借地点
+        order.setBorrowStationName(responseShop.getName());
+        order.setBorrowCity(responseShop.getCity());
+        orderMapper.saveOrder(order);
+    }
+
+    /**
+     * 异步通知请求入口.
+     *
+     * @param modelMap
+     * @param request
+     * @return
+     * @throws IOException
+     */
+    @RequestMapping(value = "/notify", method = {RequestMethod.POST})
+    public String index(ModelMap modelMap, HttpServletRequest request, HttpServletResponse response) throws IOException {
+
+        //获取支付宝POST过来反馈信息
+        Map<String, String> params = new HashMap<String, String>();
+        Map requestParams = request.getParameterMap();
+        for (Iterator iter = requestParams.keySet().iterator(); iter.hasNext(); ) {
+            String name = (String) iter.next();
+            String[] values = (String[]) requestParams.get(name);
+            String valueStr = "";
+            for (int i = 0; i < values.length; i++) {
+                valueStr = (i == values.length - 1) ? valueStr + values[i]
+                        : valueStr + values[i] + ",";
+            }
+            //乱码解决，这段代码在出现乱码时使用。如果mysign和sign不相等也可以使用这段代码转化
+            //valueStr = new String(valueStr.getBytes("ISO-8859-1"), "gbk");
+            params.put(name, valueStr);
+        }
+        //1、签名验证
+        //验证
+
+        /**
+         @param params 参数列表(包括待验签参数和签名值sign) key-参数名称 value-参数值
+         @param publicKey 验签公钥
+         @param charset 验签字符集
+         **/
+        //验证签名是否成功
+        boolean flag = false;
+        try {
+            flag = AlipaySignature.rsaCheckV2(params, alipayPublicKey, "ISO-8859-1");
+        } catch (AlipayApiException e) {
+            e.printStackTrace();
+        }
+
+
+        if (flag) {
+            //——请根据您的业务逻辑来编写程序（以下代码仅作参考）——
+            //notify_type	取值范围：
+            //ORDER_CREATE_NOTIFY (订单创建异步事件)
+            //ORDER_COMPLETE_NOTIFY (订单完结异步事件)
+            String notifyType = params.get("notify_type");
+
+            //因为是在用户点击借用按钮的时候创建的订单，所以不需要处理订单创建完结事件
+            if ("ORDER_CREATE_NOTIFY".equals(notifyType)) {
+                //判断该笔订单是否在商户网站中已经做过处理
+                //如果没有做过处理，根据订单号（out_trade_no）在商户网站的订单系统中查到该笔订单的详细，并执行商户的业务程序
+                //如果有做过处理，不执行商户的业务程序
+                //信用借还平台订单号 芝麻信用借还平台生成的订单号
+                String orderNo = params.get("order_no");
+                //外部商户订单号 外部商户生成的订单号，与芝麻信用借还平台生成的订单号存在关联关系
+                String outOrderNo = params.get("out_order_no");
+
+                Order order = orderMapper.findOrderByOrderId(outOrderNo);
+                //因为在用户点击后就生成这个订单，所以这个订单一定存在
+                //当订单的流水编号不存在时
+                if (null == order.getAlipayFundOrderNo() || "".equals(order.getAlipayFundOrderNo())) {
+                    AlipayClient alipayClient = new DefaultAlipayClient(GlobalConfig.Z_CREDIT_SERVER_URL,
+                            appId, privateKey, format, charset, alipayPublicKey,
+                            signType);
+                    ZhimaMerchantOrderRentQueryRequest zhimaMerchantOrderRentQueryRequest = new ZhimaMerchantOrderRentQueryRequest();
+                    //外部订单号，需要唯一，由商户传入，芝麻内部会做幂等控制，格式为：yyyyMMddHHmmss+随机数	2016100100000xxxx
+                    //String outOrderNo="";
+                    //信用借还的产品码:w1010100000000002858
+                    String productCode = GlobalConfig.Z_PRODUCT_CODE;
+                    zhimaMerchantOrderRentQueryRequest.setBizContent("{" +
+                            "\"out_order_no\":\"" + outOrderNo + "\"," +
+                            "\"product_code\":\"" + productCode + "\"" +
+                            "  }");
+                    ZhimaMerchantOrderRentQueryResponse zhimaResponse = null;
+                    try {
+                        zhimaResponse = alipayClient.execute(zhimaMerchantOrderRentQueryRequest);
+                    } catch (AlipayApiException e) {
+                        e.printStackTrace();
+                    }
+                    if (zhimaResponse.isSuccess()) {
+                        System.out.println("调用成功");
+
+                        updateOrder(zhimaResponse);
+
+//                        //向ycb_mcs_tradelog中存入数据
+//                        Order updateorder = new Order();
+//
+//                        //借用人支付宝userId.	例如2088202924240029
+//                        String responseUserId = ZhimaResponse.getUserId();
+//                        //信用借还的订单号,例如100000
+//                        String responseOrderNo = ZhimaResponse.getOrderNo();
+//                        //资金流水号，用于商户与支付宝进行对账	2088000000000000
+//                        String responseAlipayFundOrderNo = ZhimaResponse.getAlipayFundOrderNo();
+//
+//                        updateorder.setLastModifiedBy("SYS:completecreditpay");
+//                        updateorder.setLastModifiedDate(new Date());
+//
+//                        //因为这里只返回了信用借还的订单号，所以需要根据信用借还的订单号进行更新订单
+//                        updateorder.setOrderNo(responseOrderNo);
+//                        updateorder.setAlipayFundOrderNo(responseAlipayFundOrderNo);
+//
+//                        orderMapper.updateOrderStatusByOrderNo(updateorder);
+                    } else {
+                        System.out.println("调用失败");
+                    }
+                }
+
+                //返回 success
+                printResponse(response, "success");
+            }
+            //处理订单完结异步通知
+            if ("ORDER_COMPLETE_NOTIFY".equals(notifyType)) {
+                //判断该笔订单是否在商户网站中已经做过处理
+                //如果没有做过处理，根据订单号（out_trade_no）在商户网站的订单系统中查到该笔订单的详细，并执行商户的业务程序
+                //如果有做过处理，不执行商户的业务程序
+                //信用借还平台订单号 芝麻信用借还平台生成的订单号
+                String orderNo = params.get("order_no");
+                //外部商户订单号 外部商户生成的订单号，与芝麻信用借还平台生成的订单号存在关联关系
+                String outOrderNo = params.get("out_order_no");
+
+                Order order = orderMapper.findOrderByOrderId(outOrderNo);
+                //因为在用户点击后就生成这个订单，所以这个订单一定存在
+                //当订单的流水编号不存在时
+                if (null == order.getAlipayFundOrderNo() || "".equals(order.getAlipayFundOrderNo())) {
+                    AlipayClient alipayClient = new DefaultAlipayClient(GlobalConfig.Z_CREDIT_SERVER_URL,
+                            appId, privateKey, format, charset, alipayPublicKey,
+                            signType);
+                    ZhimaMerchantOrderRentQueryRequest zhimaMerchantOrderRentQueryRequest = new ZhimaMerchantOrderRentQueryRequest();
+                    //外部订单号，需要唯一，由商户传入，芝麻内部会做幂等控制，格式为：yyyyMMddHHmmss+随机数	2016100100000xxxx
+                    //String outOrderNo="";
+                    //信用借还的产品码:w1010100000000002858
+                    String productCode = GlobalConfig.Z_PRODUCT_CODE;
+                    zhimaMerchantOrderRentQueryRequest.setBizContent("{" +
+                            "\"out_order_no\":\"" + outOrderNo + "\"," +
+                            "\"product_code\":\"" + productCode + "\"" +
+                            "  }");
+                    ZhimaMerchantOrderRentQueryResponse ZhimaResponse = null;
+                    try {
+                        ZhimaResponse = alipayClient.execute(zhimaMerchantOrderRentQueryRequest);
+                    } catch (AlipayApiException e) {
+                        e.printStackTrace();
+                    }
+                    if (ZhimaResponse.isSuccess()) {
+                        System.out.println("调用成功");
+
+                        //向ycb_mcs_tradelog中存入数据
+                        Order updateorder = new Order();
+
+                        //借用人支付宝userId.	例如2088202924240029
+                        String responseUserId = ZhimaResponse.getUserId();
+                        //信用借还的订单号,例如100000
+                        String responseOrderNo = ZhimaResponse.getOrderNo();
+                        //资金流水号，用于商户与支付宝进行对账	2088000000000000
+                        String responseAlipayFundOrderNo = ZhimaResponse.getAlipayFundOrderNo();
+
+                        updateorder.setLastModifiedBy("SYS:completecreditpay");
+                        updateorder.setLastModifiedDate(new Date());
+
+                        //因为这里只返回了信用借还的订单号，所以需要根据信用借还的订单号进行更新订单
+                        updateorder.setOrderNo(responseOrderNo);
+                        updateorder.setAlipayFundOrderNo(responseAlipayFundOrderNo);
+
+                        orderMapper.updateOrderStatusByOrderNo(updateorder);
+                    } else {
+                        System.out.println("调用失败");
+                    }
+                }
+                //返回 success
+                printResponse(response, "success");
+            }
+        } else {//
+            return "fail";
+        }
+        return null;
+    }
+
+    /*
     当调用支付宝的创建信用借还订单接口成功时，更新订单的状态，弹出电池，弹出成功，
      */
-    private void updateOrder(ZhimaMerchantOrderRentCreateResponse response, String responseSid, String responseCableType) {
+//    private void updateOrder(ZhimaMerchantOrderRentCreateResponse response, String responseSid, String responseCableType) {
+    private void updateOrder(ZhimaMerchantOrderRentQueryResponse response) {
         //芝麻信用借还订单号
         String responseOrderNo = response.getOrderNo();
+        //根据芝麻信用借还订单号查询订单详情
+        Order order = orderMapper.findOrderByOrderNo(responseOrderNo);
+        //从订单中获取设备的sid和cabletype
+        String responseSid = order.getBorrowStationId().toString();
+        String responseCableType = order.getCable().toString();
         //获取设备的mac，在弹出电池时会使用
         String mac = stationMapper.getStationMac(Long.valueOf(responseSid));
 
@@ -251,7 +480,7 @@ public class CreditCreateOrderController {
         String responseUserId = response.getUserId();
 
         //向ycb_mcs_tradelog中存入数据
-        Order order = new Order();
+//        Order order = new Order();
         order.setCreatedBy("SYS:updatecreditpay");
         order.setCreatedDate(new Date());
         order.setStatus(1);//支付状态,0为未支付，1为已经支付
@@ -344,43 +573,31 @@ public class CreditCreateOrderController {
         }
     }
 
-    /*
-    当用户发起借用的请求的时候，生成订单存储到数据库中，
-     */
-    private void createPreOrder(String outOrderNo, String sid, String cableType, String session) {
-        //根据session从redis中查询用户的open_id
-        String openid = redisService.getKeyValue(session);
-        User user = this.userMapper.findUserinfoByOpenid(openid);
+    //当电池弹出失败时，取消订单
+    private void cancelOrder(String responseOrderNo) {
+        AlipayClient alipayClient = new DefaultAlipayClient(GlobalConfig.Z_CREDIT_SERVER_URL, appId, privateKey, format, charset, alipayPublicKey, signType);
+        ZhimaMerchantOrderRentCancelRequest request = new ZhimaMerchantOrderRentCancelRequest();
+        //信用借还的产品码:w1010100000000002858
+        String productCode = GlobalConfig.Z_PRODUCT_CODE;
 
-        //向ycb_mcs_tradelog中存入数据
-        Order order = new Order();
-        //设置用户编号
-        order.setCustomer(user.getId());
-        order.setCreatedBy("SYS:createcreditpay");
-        order.setCreatedDate(new Date());
-        //设置租借时间
-        order.setBorrowTime(new Date());
-        //设置订单编号，为商户自己的订单编号，格式为yyyyMMddHHmmss+4位随机数
-        order.setOrderid(outOrderNo);//订单编号
-        order.setPlatform(2);//平台(信用借还)
-        //根据sid查询设备所在店铺的信息
-        Shop responseShop = shopMapper.getShopInfoBySid(sid);
-        order.setPrice(responseShop.getDefaultPay());//商品价格(元)，从数据库中查询押金defaultPay
-        order.setPaid(BigDecimal.ZERO);//已支付的费用
-        order.setUsefee(BigDecimal.ZERO);//产生的费用
-
-        order.setCable(Integer.valueOf(cableType));
-        order.setStatus(0);//支付状态,0为未支付，1为已经支付
-        order.setBorrowShopId(responseShop.getId());
-        //根据返回来的sid，查询到设备所在商铺的信息，和设备的信息
-        ShopStation shopStation = shopStationMapper.findShopStationIdBySid(sid);
-        Station station = stationMapper.getStationBySid(sid);
-        order.setBorrowShopStationId(shopStation.getId());
-        order.setBorrowStationId(station.getId());
-        //设置租借地点
-        order.setBorrowStationName(responseShop.getName());
-        order.setBorrowCity(responseShop.getCity());
-        orderMapper.saveOrder(order);
+        request.setBizContent("{" +
+                "\"order_no\":\"" + responseOrderNo + "\"," +
+                "\"product_code\":\"" + productCode + "\"" +
+                "  }");
+        ZhimaMerchantOrderRentCancelResponse response = null;
+        try {
+            response = alipayClient.execute(request);
+        } catch (AlipayApiException e) {
+            e.printStackTrace();
+        }
+        if (response.isSuccess()) {
+            System.out.println("调用成功");
+            System.out.println("订单取消" + response.getMsg());
+        } else {
+            System.out.println("调用失败");
+            logger.error("调用撤销信用借还订单失败，错误代码：" + response.getCode() + "错误信息：" + response.getMsg() +
+                    "错误子代码" + response.getSubCode() + "错误子信息：" + response.getSubMsg());
+        }
     }
 
     //用户借用成功后，调用发送消息的接口给用户发送借用成功的通知
@@ -467,30 +684,19 @@ public class CreditCreateOrderController {
         }
     }
 
-    //当电池弹出失败时，取消订单
-    private void cancelOrder(String responseOrderNo) {
-        AlipayClient alipayClient = new DefaultAlipayClient(GlobalConfig.Z_CREDIT_SERVER_URL, appId, privateKey, format, charset, alipayPublicKey, signType);
-        ZhimaMerchantOrderRentCancelRequest request = new ZhimaMerchantOrderRentCancelRequest();
-        //信用借还的产品码:w1010100000000002858
-        String productCode = GlobalConfig.Z_PRODUCT_CODE;
-
-        request.setBizContent("{" +
-                "\"order_no\":\"" + responseOrderNo + "\"," +
-                "\"product_code\":\"" + productCode + "\"" +
-                "  }");
-        ZhimaMerchantOrderRentCancelResponse response = null;
+    //返回 success
+    protected void printResponse(HttpServletResponse response, String content) throws IOException {
+        PrintWriter writer = null;
         try {
-            response = alipayClient.execute(request);
-        } catch (AlipayApiException e) {
-            e.printStackTrace();
-        }
-        if (response.isSuccess()) {
-            System.out.println("调用成功");
-            System.out.println("订单取消" + response.getMsg());
-        } else {
-            System.out.println("调用失败");
-            logger.error("调用撤销信用借还订单失败，错误代码：" + response.getCode() + "错误信息：" + response.getMsg() +
-                    "错误子代码" + response.getSubCode() + "错误子信息：" + response.getSubMsg());
+            writer = response.getWriter();
+            writer.write(content);
+            writer.flush();
+        } finally {
+            if (writer != null) {
+                writer.close();
+            }
         }
     }
+
+
 }

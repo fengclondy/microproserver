@@ -20,8 +20,6 @@ public class CreditModifyOrderController {
 
     public static final Logger logger = LoggerFactory.getLogger(CreditModifyOrderController.class);
     //初始化alipayClient用到的参数:支付宝网关
-    @Value("${serverUrl}")
-    private String serverUrl;
     //初始化alipayClient用到的参数:该appId必须设为开发者自己的生活号id
     @Value("${appId}")
     private String appId;
@@ -45,7 +43,7 @@ public class CreditModifyOrderController {
     @ResponseBody
     //orderNo 信用借还订单号,该订单号在订单创建时由信用借还产品产生,并通过订单创建接口的返回结果返回给调用者
     public String query(@RequestParam("orderNo") String orderNo) {
-        AlipayClient alipayClient = new DefaultAlipayClient(serverUrl, appId, privateKey, format, charset, alipayPublicKey, signType);
+        AlipayClient alipayClient = new DefaultAlipayClient(GlobalConfig.Z_CREDIT_SERVER_URL, appId, privateKey, format, charset, alipayPublicKey, signType);
         ZhimaMerchantOrderRentModifyRequest request = new ZhimaMerchantOrderRentModifyRequest();
         //信用借还的产品码,是固定值:w1010100000000002858
         String productCode = GlobalConfig.Z_PRODUCT_CODE;
