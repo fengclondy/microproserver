@@ -35,7 +35,7 @@ public class ShopStation extends BaseEntity {
     private String logo;
 
     //收费策略
-    private FeeStrategy feeStrategy;
+    private FeeStrategy feeStrategyEntity;
 
     // 设备
     private List<Station> shopStation;
@@ -120,11 +120,12 @@ public class ShopStation extends BaseEntity {
         this.logo = logo;
     }
 
-    public FeeStrategy getFeeStrategy() {
-        return feeStrategy;
+    public FeeStrategy getFeeStrategyEntity() {
+        return feeStrategyEntity;
     }
 
-    public void setFeeStrategy(FeeStrategy feeStrategy) {
-        this.feeStrategy = feeStrategy;
+    public void setFeeStrategyEntity(FeeStrategy feeStrategyEntity) {
+        this.feeStrategyEntity = feeStrategyEntity;
     }
+
 }

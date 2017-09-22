@@ -48,8 +48,8 @@ public class OrderController {
             User user = this.userMapper.findUserinfoByOpenid(openid);
             List<TradeLog> tradeLogList = this.orderMapper.findTradeLogs(user.getId());
             for (int i = 0; i < tradeLogList.size(); i++) {
-                tradeLogList.get(i).setFeeStr(feeStrategyService.transFeeStrategy(tradeLogList.get(i).getFeeStrategy()));
-                tradeLogList.get(i).setUseFee(feeStrategyService.calUseFee(tradeLogList.get(i).getFeeStrategy(),
+                tradeLogList.get(i).setFeeStrategy(feeStrategyService.transFeeStrategy(tradeLogList.get(i).getFeeStrategyEntity()));
+                tradeLogList.get(i).setUseFee(feeStrategyService.calUseFee(tradeLogList.get(i).getFeeStrategyEntity(),
                         tradeLogList.get(i).getDuration(),
                         tradeLogList.get(i).getStatus(),
                         tradeLogList.get(i).getUseFee()));
